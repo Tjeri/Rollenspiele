@@ -1,3 +1,4 @@
+require("Rollenspiele/ChannelCover.js");
 require("Rollenspiele/Settings.js");
 require("Rollenspiele/Strings.js");
 require("Rollenspiele/StringKeys.js");
@@ -10,9 +11,6 @@ RPG = (new function () {
 
     var mods = {};
 
-    var channels;
-    var cms;
-
     var file = new HTMLFile('display.html');
     var content = AppContent.overlayContent(file, 200, 100);
 
@@ -23,16 +21,7 @@ RPG = (new function () {
     };
 
     this.onShutdown = function () {
-        if (Settings.CHANS) {
-            channels = DB.getObj(Keys.CHANNELS, []);
-            for (var i = 0; i < channels.length; ++i) {
-                if (channels[i] == Channel.getName()) {
-                    channels.splice(i, 1);
-                    break;
-                }
-            }
-            DB.saveObj(Keys.CHANNELS, channels);
-        }
+        ChannelCover.remove();
     };
 
     this.commands = {
@@ -136,6 +125,17 @@ RPG = (new function () {
                 _user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
             }
         },
+        players: function (user, _nicks) {
+            if (isDev(user)) {
+                var nicks = _nicks.split(",");
+                nicks.forEach(function (nick) {
+                    currentPlayers.push(nick);
+                });
+                user.sendPrivateMessage("Done");
+            } else {
+                _user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
+            }
+        },
         canplay: function (_user, _nick) {
             if (currentPlayers.indexOf(_user.getNick()) > -1) {
                 var user = Users.getUser(_user, _nick);
@@ -207,6 +207,17 @@ RPG = (new function () {
                 user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
             }
         },
+        removeWindow: function (_user, nick) {
+            if (isAllowed(_user)) {
+                var user = Users.getUser(_user, nick);
+                if (user) {
+                    user.removeAppContent();
+                    _user.sendPrivateMessage("Fenster bei " + nick + " entfernt.");
+                }
+            } else {
+                _user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
+            }
+        },
         restart: function (user) {
             if (isDev(user)) {
                 user.sendPrivateMessage(STRINGS.APP_RESTART);
@@ -230,29 +241,7 @@ RPG = (new function () {
         },
         chans: function (user) {
             if (isAllowed(user)) {
-                if (Settings.CHANS) {
-                    var output = STRINGS.EXISTING_CHANS;
-                    channels = DB.getObj(Keys.CHANNELS, []);
-                    channels.sort();
-                    for (var i = 0; i < channels.length; ++i) {
-                        var cName = channels[i];
-                        output += "°#°" + cName + " - ";
-                        var chanCMs = DB.getObj(cName, []);
-                        if (chanCMs.length == 0) {
-                            output += STRINGS.noCMs(cName);
-                        } else {
-                            for (var j = 0; j < chanCMs.length; ++j) {
-                                if (j != 0) {
-                                    output += ", ";
-                                }
-                                output += chanCMs[j].getProfileLink();
-                            }
-                        }
-                    }
-                    user.sendPrivateMessage(output);
-                } else {
-                    user.sendPrivateMessage(STRINGS.NOT_AVAILABLE);
-                }
+                ChannelCover.showList(user);
             } else {
                 user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
             }
@@ -325,33 +314,12 @@ RPG = (new function () {
                 }
             }
         }
-        if (Settings.CHANS) {
-            if (channels.indexOf(name) == -1) {
-                initialize();
-            } else if (isCM(user)) {
-                cms.push(user);
-                DB.saveObj(name, cms);
-            }
-        }
+        ChannelCover.userJoined(user);
         welcome(user);
     };
 
     this.onUserLeft = function (user) {
-        if (Settings.CHANS) {
-            if (Channel.getUsers(UserType.Human).length == 0) {
-                channels = DB.getObj(Keys.CHANNELS, []);
-                for (var j = 0; j < channels.length; ++j) {
-                    if (channels[j] == name) {
-                        channels.splice(j, 1);
-                        break;
-                    }
-                }
-                DB.saveObj(Keys.CHANNELS, channels);
-            } else if (isCM(user)) {
-                cms = Channel.getOnlineCMs();
-                DB.saveObj(name, cms);
-            }
-        }
+        ChannelCover.userLeft(user);
         if (rpgMode) {
             if (currentPlayers.indexOf(user.getNick() > -1)) {
                 setTimeout(function () {
@@ -374,14 +342,9 @@ RPG = (new function () {
             init = true;
             if (name.indexOf(Settings.DEBUG_CHAN) > -1) {
                 Settings.DEBUG = true;
+                Settings.CHANS = true;
             }
-            if (Settings.CHANS) {
-                channels = DB.getObj(Keys.CHANNELS, []);
-                channels.push(name);
-                DB.saveObj(Keys.CHANNELS, channels);
-                cms = Channel.getOnlineCMs();
-                DB.saveObj(name, cms);
-            }
+            ChannelCover.initialize();
             if (Settings.MODS) {
                 mods = DB.getObj(Keys.MODERATORS, {});
             }

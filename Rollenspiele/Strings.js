@@ -77,6 +77,9 @@ var STRINGS = (new function () {
         out += "°#°/player - Zeigt die aktiven Spieler.";
         out += "°#°/player NICK - Fügt NICK als Mitspieler im aktuellen RPG hinzu.";
         out += "°#°/player !NICK - Löscht NICK als Mitspieler im aktuellen RPG.";
+        if (cm) {
+            out += "°#°/removeWindow NICK - Entfernt das RPG Hinweisfenster bei NICK.";
+        }
         out += "°#°/rpg - Zeigt an, ob der RPG Modus an oder aus ist.";
         out += "°#°/rpg on - aktiviert den RPG Modus.";
         out += "°#°/rpg off - deaktiviert den RPG Modus.";

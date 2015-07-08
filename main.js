@@ -20,7 +20,10 @@ var App = (new function () {
         player: function (user, param, command) {
             RPG.commands.player(user, param);
         },
-        canplay: function(user, param, command) {
+        players: function (user, param, command) {
+            RPG.commands.players(user, param);
+        },
+        canplay: function (user, param, command) {
             RPG.commands.canplay(user, param);
         },
         iplay: function (user, param, command) {
@@ -31,6 +34,9 @@ var App = (new function () {
         },
         srpg: function (user, param, command) {
             RPG.commands.srpg(user, param)
+        },
+        removeWindow: function (user, param, command) {
+            RPG.commands.removeWindow(user, param);
         },
         restart: function (user, param, command) {
             RPG.commands.restart(user);
