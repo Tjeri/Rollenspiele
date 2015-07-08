@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="UserApps-API" type="javaScript">
+    <properties>
+      <sourceFilesUrls>
+        <item url="file://$PROJECT_DIR$/../UserApps-API.js" />
+      </sourceFilesUrls>
+    </properties>
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/../UserApps-API.js" />
+    </CLASSES>
+    <SOURCES />
+  </library>
+</component>
