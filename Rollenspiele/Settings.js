@@ -5,6 +5,5 @@ Settings = (new function () {
 
     this.CHANS = true;
     this.DEBUG = false;
-    this.HTML = true;
     this.MODS = true;
 }());

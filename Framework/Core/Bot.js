@@ -9,6 +9,10 @@
         return _bot.getNick();
     };
 
+    this.isBot = function(user) {
+        return user.getNick() == _bot.getNick();
+    };
+
     this.knuddel = function (user, count) {
         var amount = KnuddelAmount(count);
        

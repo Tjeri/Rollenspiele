@@ -1,63 +1,47 @@
 var ChannelCover = (new function () {
     var init = false;
 
-    var channels;
-    var cms;
-
-    var name = Channel.getName();
-
-    this.getData = function() {
-        Log.d(init);
-        Log.d(channels);
-        Log.d(cms);
-    };
-
-    this.reset = function() {
-        init = false;
-        channels = [];
-        cms = [];
-    };
-
     this.initialize = function () {
         if (Settings.CHANS && !init) {
             init = true;
 
-            channels = DB.getObj(Keys.CHANNELS, []);
-            if (channels.indexOf(name) == -1) {
-                channels.push(name);
-                DB.saveObj(Keys.CHANNELS, channels);
+            var channels = getChanDB();
+            if (channels.indexOf(RS.name) == -1) {
+                channels.push(RS.name);
+                channels.sort();
+                saveChanDB(channels);
             } else {
-                Log.dev("Tried 2 initialize ChannelCover in " + name + ". Channel was already on the List.")
+                Log.dev("Tried 2 initialize ChannelCover in " + RS.name + ". Channel was already on the List.")
             }
-            cms = Channel.getOnlineCMs();
-            DB.saveObj(name, cms);
+            var cms = Channel.getOnlineCMs();
+            saveCMDB(RS.name, cms);
         }
     };
 
     this.remove = function () {
         if (Settings.CHANS) {
-            channels = DB.getObj(Keys.CHANNELS, []);
+            var channels = getChanDB();
             for (var i = 0; i < channels.length; ++i) {
-                if (channels[i] == name) {
+                if (channels[i] == RS.name) {
                     channels.splice(i, 1);
+                    init = false;
                     break;
                 }
             }
-            DB.saveObj(Keys.CHANNELS, channels);
+            saveChanDB(channels);
         }
     };
 
     this.showList = function (user) {
         if (Settings.CHANS) {
             var output = STRINGS.EXISTING_CHANS;
-            channels = DB.getObj(Keys.CHANNELS, []);
-            channels.sort();
+            var channels = getChanDB();
             for (var i = 0; i < channels.length; ++i) {
-                var cName = channels[i];
-                output += "°#°" + cName + " - ";
-                var chanCMs = DB.getObj(cName, []);
+                var name = channels[i];
+                output += "°#°" + name + " - ";
+                var chanCMs = getCMDB(name);
                 if (chanCMs.length == 0) {
-                    output += STRINGS.noCMs(cName);
+                    output += STRINGS.noCMs(name);
                 } else {
                     for (var j = 0; j < chanCMs.length; ++j) {
                         if (j != 0) {
@@ -67,7 +51,6 @@ var ChannelCover = (new function () {
                     }
                 }
             }
-            Log.d(output.escapeKCode());
             user.sendPrivateMessage(output);
         } else {
             user.sendPrivateMessage(STRINGS.NOT_AVAILABLE);
@@ -76,11 +59,12 @@ var ChannelCover = (new function () {
 
     this.userJoined = function (user) {
         if (Settings.CHANS) {
-            if (channels.indexOf(name) == -1) {
+            var channels = getChanDB();
+            if (channels.indexOf(RS.name) == -1) {
                 this.initialize();
             } else if (user.isChannelModerator()) {
-                cms.push(user);
-                DB.saveObj(name, cms);
+                var cms = Channel.getOnlineCMs();
+                saveCMDB(RS.name, cms);
             }
         }
     };
@@ -88,18 +72,35 @@ var ChannelCover = (new function () {
     this.userLeft = function (user) {
         if (Settings.CHANS) {
             if (Channel.getUsers(UserType.Human).length == 0) {
-                channels = DB.getObj(Keys.CHANNELS, []);
+                var channels = getChanDB();
                 for (var j = 0; j < channels.length; ++j) {
-                    if (channels[j] == name) {
+                    if (channels[j] == RS.name) {
                         channels.splice(j, 1);
+                        init = false;
                         break;
                     }
                 }
-                DB.saveObj(Keys.CHANNELS, channels);
+                saveChanDB(channels);
             } else if (user.isChannelModerator()) {
-                cms = Channel.getOnlineCMs();
-                DB.saveObj(name, cms);
+                var cms = Channel.getOnlineCMs();
+                saveCMDB(RS.name, cms);
             }
         }
     };
+
+    function getChanDB() {
+        return DB.getObj(Keys.CHANNELS, []);
+    }
+
+    function getCMDB(_chan) {
+        return DB.getObj(_chan, []);
+    }
+
+    function saveChanDB(_db) {
+        DB.saveObj(Keys.CHANNELS, _db);
+    }
+
+    function saveCMDB(_chan, _db) {
+        DB.saveObj(_chan, _db);
+    }
 }());

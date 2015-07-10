@@ -1,282 +1,268 @@
 require("Rollenspiele/ChannelCover.js");
+require("Rollenspiele/HtmlBox.js");
+require("Rollenspiele/RPGMode.js");
+require("Rollenspiele/RPGMods.js");
+require("Rollenspiele/RPG.js");
 require("Rollenspiele/Settings.js");
 require("Rollenspiele/Strings.js");
 require("Rollenspiele/StringKeys.js");
 
-RPG = (new function () {
+var RS = (new function () {
+    this.name = Channel.getName();
+
     var init = false;
-
-    var rpgMode = false;
-    var currentPlayers = [];
-
-    var mods = {};
-
-    var file = new HTMLFile('display.html');
-    var content = AppContent.overlayContent(file, 200, 100);
-
-    var name = Channel.getName();
 
     this.onAppStart = function () {
         initialize();
     };
 
     this.onShutdown = function () {
+        RS.sendPub("Ein kurzer Neustart, ich bin gleich wieder da :)");
         ChannelCover.remove();
+        RPGS.onShutdown();
     };
 
     this.commands = {
-        app: function (user) {
-            if (isAllowed(user)) {
-                user.sendPrivateMessage(STRINGS.help(true));
-            } else if (isMod(user)) {
-                user.sendPrivateMessage(STRINGS.help(false));
+        accept: function (_user, _params) {
+            var params = _params.split(":");
+            if (params[0] != "" && params[1] && params[1] != "") {
+                RPGS.acceptPlayer(_user, params[0], params[1]);
             } else {
-                user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
+                _user.sendPrivateMessage("Nutze die Funktion bitte so: /accept ID:NICK");
             }
         },
-        juschu: function (user, nick) {
-            if (isAllowed(user)) {
-                sendPub(STRINGS.juschu(nick));
+        addMod: function (_user, _mod) {
+            if (_mod != "") {
+                Mods.addMod(_user, _mod);
             } else {
-                user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
+                _user.sendPrivateMessage("Nutze die Funktion bitte so: /addMod NICK");
             }
         },
-        mods: function (_user, _nick) {
-            if (isAllowed(_user)) {
-                if (Settings.MODS) {
-                    if (_nick == "") {
-                        var str = "";
-
-                        for (var nick in mods) {
-                            if (mods.hasOwnProperty(nick) && mods[nick]) {
-                                if (str != "") {
-                                    str += ", "
-                                }
-                                str += nick;
-                            }
-                        }
-
-                        _user.sendPrivateMessage(STRINGS.currentMods(str));
-                    } else {
-                        var remove = _nick.charAt(0) == "!";
-                        var change = false;
-                        if (remove) {
-                            _nick = _nick.substr(1);
-                        }
-                        var user = Users.getUser(_user, _nick);
-                        if (user) {
-                            var nick = user.getNick();
-                            if (remove && mods[nick]) {
-                                mods[nick] = false;
-                                change = true;
-                                DB.saveObj(Keys.MODERATORS, mods);
-                            } else if (!mods[nick]) {
-                                mods[nick] = true;
-                                change = true;
-                                DB.saveObj(Keys.MODERATORS, mods);
-                            }
-                            _user.sendPrivateMessage(STRINGS.rpgModChange(nick, remove, change));
-                        }
-                    }
-                } else {
-                    _user.sendPrivateMessage(STRINGS.NOT_AVAILABLE);
+        addPlayer: function (_user, _params) {
+            var params = _params.split(":");
+            if (params[0] != "" && params[1] && params[1] != "") {
+                RPGS.addPlayer(_user, params[0], params[1]);
+            } else {
+                _user.sendPrivateMessage("Nutze die Funktion bitte so: /addPlayer ID:NICK");
+            }
+        },
+        app: function (_user) {
+            if (RS.isAllowed(_user)) {
+                _user.sendPrivateMessage(STRINGS.help(true));
+            } else if (Mods.isMod(_user)) {
+                _user.sendPrivateMessage(STRINGS.help(false));
+            } else {
+                _user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
+            }
+        },
+        decline: function (_user, _params) {
+            var params = _params.split(":");
+            if (params[0] != "" && params[1] && params[1] != "") {
+                RPGS.declinePlayer(_user, params[0], params[1]);
+            } else {
+                _user.sendPrivateMessage("Nutze die Funktion bitte so: /decline ID:NICK");
+            }
+        },
+        changeHost: function (_user, _params) {
+            var params = _params.split(":");
+            if (params[0] != "" && params[1] && params[1] != "") {
+                RPGS.changeHost(_user, params[0], params[1]);
+            } else {
+                _user.sendPrivateMessage("Nutze die Funktion bitte so: /changeHost ID:NICK");
+            }
+        },
+        chans: function (_user) {
+            if (RS.isAllowed(_user)) {
+                ChannelCover.showList(_user);
+            } else {
+                _user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
+            }
+        },
+        eval: function (_user, _code) {
+            if (_user.isAppDeveloper()) {
+                eval(_code);
+            } else {
+                _user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
+            }
+        },
+        join: function (_user, _id) {
+            if (_id != "") {
+                RPGS.joinRPG(_user, _id);
+            } else {
+                _user.sendPrivateMessage("Nutze die Funktion bitte so: /join ID");
+            }
+        },
+        juschu: function (_user, _nick) {
+            if (RS.isAllowed(_user)) {
+                var user = Users.get(_nick);
+                if (user) {
+                    RPGS.sendPub(STRINGS.juschu(user.getNick()));
                 }
             } else {
                 _user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
             }
         },
-        player: function (_user, _nick) {
-            _nick.trim();
-            if (isAllowed(_user) || isMod(_user)) {
-                if (_nick == "") {
-                    if (currentPlayers.length == 0) {
-                        _user.sendPrivateMessage(STRINGS.NO_PLAYERS);
-                    } else {
-                        var players = "";
-                        for (var i = 0; i < currentPlayers.length; ++i) {
-                            if (i != 0) {
-                                players += ", ";
-                            }
-                            players += currentPlayers[i];
-                        }
-                        _user.sendPrivateMessage(STRINGS.activePlayers(players));
-                    }
+        klammern: function (_user, _nick) {
+            if (RS.isAllowed(_user)) {
+                var user = Users.get(_nick);
+                if (user) {
+                    RS.sendPub(STRINGS.klammern(user.getNick()));
+                }
+            } else {
+                _user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
+            }
+        },
+        leave: function (_user, _id) {
+            if (_id != "") {
+                RPGS.leaveRPG(_user, _id);
+            } else {
+                _user.sendPrivateMessage("Nutze die Funktion bitte so: /leave ID");
+            }
+        },
+        removeMod: function (_user, _mod) {
+            if (_mod != "") {
+                Mods.removeMod(_user, _mod);
+            } else {
+                _user.sendPrivateMessage("Nutze die Funktion bitte so: /removeMod NICK");
+            }
+        },
+        removePlayer: function (_user, _params) {
+            var params = _params.split(":");
+            if (params[0] != "" && params[1] && params[1] != "") {
+                RPGS.removePlayer(_user, params[0], params[1]);
+            } else {
+                _user.sendPrivateMessage("Nutze die Funktion bitte so: /removePlayer ID:NICK");
+            }
+        },
+        removeWindow: function (_user, _nick) {
+            if (RS.isAllowed(_user)) {
+                var user = Users.get(_user, _nick);
+                if (user) {
+                    HtmlBox.removeContent(user);
+                    _user.sendPrivateMessage("Fenster bei " + user.getNick() + " entfernt.");
+                }
+            } else {
+                _user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
+            }
+        },
+        restart: function (_user) {
+            if (_user.isAppDeveloper()) {
+                _user.sendPrivateMessage(STRINGS.APP_RESTART);
+            } else {
+                _user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
+            }
+        },
+        rpg: function (_user, _param) {
+            var params = _param.split(":");
+            var param = params[0];
+            if (param == "on") {
+                RPGS.startRPGMode(params[1] && params[1] == "silent");
+            } else if (param == "off") {
+                RPGS.endRPGMode(params[1] && params[1] == "silent");
+            } else if (param == "create") {
+                if (params[1] && params[1] != "") {
+                    RPGS.createRPG(_user, params[1]);
                 } else {
-                    var remove = _nick.charAt(0) == "!";
-                    if (remove) {
-                        _nick = _nick.substr(1);
+                    _user.sendPrivateMessage("Nutze die Funktion bitte so: /rpg create:NICK");
+                }
+            } else if (param == "remove") {
+                if (params[1] && params[1] != "") {
+                    RPGS.removeRPG(_user, params[1]);
+                } else {
+                    _user.sendPrivateMessage("Nutze die Funktion bitte so: /rpg remove:ID");
+                }
+            } else {
+                RPGS.showRPGList(_user);
+            }
+        },
+        say: function (_user, _msg) {
+            if (_user.isAppDeveloper()) {
+                RS.sendPub(_msg);
+            } else {
+                _user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
+            }
+        },
+        setName: function (_user, _params) {
+            var params = _params.split(":");
+            if (params[0] != "" && params[1] && params[1] != "") {
+                RPGS.setName(_user, params[0], params[1])
+            } else {
+                _user.sendPrivateMessage("Nutze die Funktion bitte so: /setName ID:NAME");
+            }
+        },
+        setTheme: function (_user, _params) {
+            var params = _params.split(":");
+            if (params[0] != "" && params[1] && params[1] != "") {
+                RPGS.setTheme(_user, params[0], params[1])
+            } else {
+                _user.sendPrivateMessage("Nutze die Funktion bitte so: /setTheme ID:THEME");
+            }
+        },
+        showMods: function (_user) {
+            Mods.showMods(_user);
+        },
+        welcome: function (_user, _param) {
+            if (_user.isAppDeveloper()) {
+                if (_param == "") {
+                    var out = "Folgende Leute haben gerade eine eigene Begrüßung: ";
+                    var count = 0;
+                    DB.getObj(Keys.WELCOME_LIST, []).forEach(function (nick) {
+                        if (count > 0) {
+                            out += ", "
+                        }
+                        out += nick;
+                        count++;
+                    });
+                    if (count == 0) {
+                        out += "Keine";
                     }
-                    var user = Users.getUser(_user, _nick);
+                    _user.sendPrivateMessage(out);
+                } else if (_param.charAt(0) == "!") {
+                    var user = Users.get(_user, _param.substr(1));
                     if (user) {
                         var nick = user.getNick();
-                        var index = currentPlayers.indexOf(nick);
-                        var onList = index > -1;
-                        if (remove && onList) {
-                            currentPlayers.splice(index, 1);
-                            user.sendPrivateMessage(STRINGS.removedAsPlayer(_user.getNick()));
-                        } else if (!remove && !onList) {
-                            currentPlayers.push(nick);
-                            user.sendPrivateMessage(STRINGS.I_PLAY);
+                        var key = Keys.WELCOME + nick;
+                        if (DB.hasStr(key)) {
+                            DB.delStr(key);
+                            var users = DB.getObj(Keys.WELCOME_LIST, []);
+                            var index = users.indexOf(nick);
+                            users.splice(index, 1);
+                            DB.saveObj(Keys.WELCOME_LIST, users);
+                            _user.sendPrivateMessage(nick + " hat nun keine eigene Begrüßung mehr.");
+                        } else {
+                            _user.sendPrivateMessage("Keine Begrüßung für " + nick + " registriert.");
                         }
-                        _user.sendPrivateMessage(STRINGS.activePlayerChange(nick, remove, onList));
                     }
-                }
-            } else {
-                _user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
-            }
-        },
-        players: function (user, _nicks) {
-            if (isDev(user)) {
-                var nicks = _nicks.split(",");
-                nicks.forEach(function (nick) {
-                    currentPlayers.push(nick);
-                });
-                user.sendPrivateMessage("Done");
-            } else {
-                _user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
-            }
-        },
-        canplay: function (_user, _nick) {
-            if (currentPlayers.indexOf(_user.getNick()) > -1) {
-                var user = Users.getUser(_user, _nick);
-                if (user) {
-                    var nick = user.getNick();
-                    if (currentPlayers.indexOf(nick) == -1) {
-                        sendPlayers(STRINGS.activePlayerChange(nick, false, false));
-                        currentPlayers.push(nick);
-                        user.sendPrivateMessage(STRINGS.I_PLAY);
-                    } else {
-                        _user.sendPrivateMessage(STRINGS.activePlayerChange(nick, false, true));
-                    }
-                }
-            } else {
-                _user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
-            }
-        },
-        iplay: function (_user) {
-            var nick = _user.getNick();
-            if (currentPlayers.indexOf(nick == -1)) {
-                if (currentPlayers.length == 0) {
-                    currentPlayers.push(nick);
-                    _user.sendPrivateMessage(STRINGS.I_PLAY);
-                } else {
-                    sendPlayers(STRINGS.canPlay(nick));
-                    _user.sendPrivateMessage(STRINGS.I_ASK_PLAY);
-                }
-            } else {
-                _user.sendPrivateMessage(STRINGS.I_ALREADY_PLAY);
-            }
-        },
-        srpg: function (user, param) {
-            if (isAllowed(user)) {
-                if (param == "on" && !rpgMode) {
-                    rpgMode = true;
-                    sendContent();
-                } else if (rpgMode && param == "off") {
-                    rpgMode = false;
-                    removeContent();
-                    currentPlayers = [];
-                }
+                } else if (_param.charAt(0) == "?") {
+                    var user = Users.get(_user, _param.substr(1));
+                    if (user) {
+                        var nick = user.getNick();
+                        var str = DB.getStr(Keys.WELCOME + nick, "");
 
-                if (rpgMode) {
-                    user.sendPrivateMessage(STRINGS.RPG_ON);
+                        if (str == "") {
+                            _user.sendPrivateMessage(nick + " hat keine Begrüßungsnachricht.");
+                        } else {
+                            _user.sendPrivateMessage(nick + " hat folgende Nachricht zur Begrüßung: °#°" + str);
+                        }
+                    }
                 } else {
-                    user.sendPrivateMessage(STRINGS.RPG_OFF);
-                }
-            } else {
-                user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
-            }
-        },
-        rpg: function (user, param) {
-            if (isAllowed(user) || isMod(user)) {
-                if (param == "on" && !rpgMode) {
-                    rpgMode = true;
-                    sendContent();
-                    sendPub(STRINGS.SWITCH_RPG_ON);
-                } else if (rpgMode && param == "off") {
-                    rpgOff();
-                    currentPlayers = [];
-                } else {
-                    if (rpgMode) {
-                        user.sendPrivateMessage(STRINGS.RPG_ON);
-                    } else {
-                        user.sendPrivateMessage(STRINGS.RPG_OFF);
+                    var params = _param.split(":");
+                    var user = Users.get(_user, params[0]);
+                    if (user) {
+                        var nick = user.getNick();
+                        var key = Keys.WELCOME + nick;
+                        if (!DB.hasStr(key)) {
+                            var users = DB.getObj(Keys.WELCOME_LIST, []);
+                            users.push(nick);
+                            users.sort();
+                            DB.saveObj(Keys.WELCOME_LIST, users);
+                        }
+                        DB.saveStr(key, params[1]);
+                        _user.sendPrivateMessage(nick + " wird ab nun mit folgendem Text begrüßt: °#°" + params[1]);
                     }
                 }
             } else {
-                user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
-            }
-        },
-        removeWindow: function (_user, nick) {
-            if (isAllowed(_user)) {
-                var user = Users.getUser(_user, nick);
-                if (user) {
-                    user.removeAppContent();
-                    _user.sendPrivateMessage("Fenster bei " + nick + " entfernt.");
-                }
-            } else {
                 _user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
-            }
-        },
-        restart: function (user) {
-            if (isDev(user)) {
-                user.sendPrivateMessage(STRINGS.APP_RESTART);
-            } else {
-                user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
-            }
-        },
-        say: function (user, param) {
-            if (isDev(user)) {
-                sendPub(param);
-            } else {
-                user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
-            }
-        },
-        klammern: function (user, param) {
-            if (isAllowed(user)) {
-                sendPub(STRINGS.klammern(param));
-            } else {
-                user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
-            }
-        },
-        chans: function (user) {
-            if (isAllowed(user)) {
-                ChannelCover.showList(user);
-            } else {
-                user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
-            }
-        },
-        resetDB: function (user) {
-            if (isDev(user)) {
-                DB.saveObj(Keys.CHANNELS, []);
-                DB.saveObj(name, []);
-                for (var i = 2; i < 10; ++i) {
-                    DB.saveObj(name + " " + i, []);
-                }
-                user.sendPrivateMessage(STRINGS.DB_DELETED);
-            } else {
-                user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
-            }
-        },
-        clock: function (user, param) {
-            if (isDev(user)) {
-                user.sendPrivateMessage(STRINGS.clReason(param));
-            } else {
-                user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
-            }
-        },
-        tjeri: function (user, param, command) {
-            if (isDev(user)) {
-                //Log.d(Channel.getCMs());
-            } else {
-                user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
-            }
-        },
-        func: function (user, param) {
-            if (isDev(user)) {
-                eval(param);
-            } else {
-                user.sendPrivateMessage(STRINGS.NOT_ALLOWED);
             }
         }
     };
@@ -286,136 +272,49 @@ RPG = (new function () {
     };
 
     this.onPublicMessage = function (user, msg) {
-        if (rpgMode && currentPlayers.indexOf(user.getNick()) == -1) {
-            msg = msg.trim();
-            var start = isValidBracket(msg.charAt(0));
-            var end = isValidBracket(msg.charAt(msg.length - 1));
-
-            if (!start || !end) {
-                if ((start || end) && msg.length == 1) {
-                    return;
-                }
-                user.sendPrivateMessage(STRINGS.askRPG(start, end));
-            }
-        }
+        RPGS.onPublicMessage(user, msg);
     };
 
     this.onKnuddelReceived = function (sender, receiver, knuddelAmount, transferReason) {
         sender.sendPostMessage("", STRINGS.KNUDDEL_THANKS);
-        KnuddelsServer.getAppDeveloper().sendPostMessage("", STRINGS.knuddelDonation(name, sender, knuddelAmount, transferReason));
+        KnuddelsServer.getAppDeveloper().sendPostMessage("", STRINGS.knuddelDonation(RS.name, sender, knuddelAmount, transferReason));
     };
 
     this.onUserJoined = function (user) {
-        if (rpgMode) {
-            Bot.prv(user, STRINGS.RPG_PRV);
-            if (Settings.HTML) {
-                if (user.canSendAppContent(content)) {
-                    user.sendAppContent(content);
-                }
-            }
-        }
+        RPGS.userJoined(user);
         ChannelCover.userJoined(user);
         welcome(user);
     };
 
     this.onUserLeft = function (user) {
         ChannelCover.userLeft(user);
-        if (rpgMode) {
-            if (currentPlayers.indexOf(user.getNick() > -1)) {
-                setTimeout(function () {
-                    if (!user.isOnlineInChannel()) {
-                        var index = currentPlayers.indexOf(user.getNick());
-                        if (index > -1) {
-                            currentPlayers.splice(index, 1);
-                            if (currentPlayers.length == 0) {
-                                rpgOff();
-                            }
-                        }
-                    }
-                }, Settings.TIMEOUT);
-            }
+        RPGS.userLeft(user);
+    };
+
+    this.isAllowed = function (user) {
+        return Settings.DEBUG || user.isAppDeveloper() || user.isChannelOwner() || user.isChannelModerator();
+    };
+
+    this.sendPub = function (msg) {
+        if (RPGS.rpgModeActive()) {
+            msg = "< " + msg + " >";
         }
+        Bot.pub(msg);
     };
 
     function initialize() {
         if (!init) {
             init = true;
-            if (name.indexOf(Settings.DEBUG_CHAN) > -1) {
+            if (RS.name.indexOf(Settings.DEBUG_CHAN) > -1) {
                 Settings.DEBUG = true;
-                Settings.CHANS = true;
             }
             ChannelCover.initialize();
-            if (Settings.MODS) {
-                mods = DB.getObj(Keys.MODERATORS, {});
-            }
         }
-    }
-
-    function isAllowed(user) {
-        return Settings.DEBUG || isCM(user) || isHZM(user) || isDev(user);
-    }
-
-    function isCM(user) {
-        return user.isChannelModerator();
-    }
-
-    function isDev(user) {
-        return user.isAppDeveloper();
-    }
-
-    function isHZM(user) {
-        return user.isChannelOwner();
-    }
-
-    function isMod(user) {
-        return mods[user.getNick()];
-    }
-
-    function isValidBracket(c) {
-        return Settings.BRACKETS.indexOf(c) > -1;
-    }
-
-    function removeContent() {
-        var users = Channel.getUsers(UserType.Human);
-        users.forEach(function (user) {
-            user.removeAppContent();
-        });
-    }
-
-    function rpgOff() {
-        rpgMode = false;
-        removeContent();
-        sendPub(STRINGS.SWITCH_RPG_OFF);
-    }
-
-    function sendContent() {
-        if (Settings.HTML) {
-            var users = Channel.getUsers(UserType.Human);
-            users.forEach(function (user) {
-                if (user.canSendAppContent(content)) {
-                    user.sendAppContent(content);
-                }
-            });
-        }
-    }
-
-    function sendPlayers(msg) {
-        currentPlayers.forEach(function (_nick) {
-            var user = Users.getUser(KnuddelsServer.getAppDeveloper(), _nick);
-            user.sendPrivateMessage(msg);
-        });
-    }
-
-    function sendPub(msg) {
-        if (rpgMode) {
-            msg = "< " + msg + " >";
-        }
-        Bot.pub(msg);
     }
 
     function welcome(user) {
-        var str = STRINGS.welcome(user.getNick());
-        if (str) {
+        var str = DB.getStr(Keys.WELCOME + user.getNick(), "");
+        if (str != "") {
             user.sendPrivateMessage(str);
         }
     }

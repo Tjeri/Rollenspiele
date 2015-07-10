@@ -37,7 +37,12 @@
     };
 
     this.dev = function (msg) {
-        KnuddelsServer.getAppDeveloper().sendPostMessage("Debug", msg);
+        var dev = KnuddelsServer.getAppDeveloper();
+        if (dev.isOnline()) {
+            dev.sendPrivateMessage("Debug:°#°" + msg);
+        } else {
+            dev.sendPostMessage("Debug", msg);
+        }
     };
 
 }());

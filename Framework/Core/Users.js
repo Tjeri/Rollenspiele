@@ -3,7 +3,7 @@ var Users = (new function () {
     this.canAccess = function (user, nick, uid) {
         if (KnuddelsServer.canAccessUser(uid)) {
             return true
-        } else {
+        } else if (user) {
             user.sendPrivateMessage(STRINGS.cantAccess(nick));
         }
     };
@@ -12,12 +12,14 @@ var Users = (new function () {
         if (KnuddelsServer.userExists(nick)) {
             return true;
         } else {
-            user.sendPrivateMessage(STRINGS.wrongNick(nick));
+            if (user) {
+                user.sendPrivateMessage(STRINGS.wrongNick(nick));
+            }
             return false;
         }
     };
 
-    this.getUser = function (user, nick) {
+    this.get = function (user, nick) {
         if (Users.exists(user, nick)) {
             var uid = KnuddelsServer.getUserId(nick);
             if (Users.canAccess(user, nick, uid)) {

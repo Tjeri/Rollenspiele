@@ -14,7 +14,7 @@
     };
 
     this.delStr = function (key) {
-        return _db.deleteObject(key);
+        return _db.deleteString(key);
     };
 
     this.getNum = function (key, defaultValue) {

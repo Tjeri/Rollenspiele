@@ -1,5 +1,5 @@
 var STRINGS = (new function () {
-    this.APP_RESTART = "°>DB reset|/resetdb<°°#°°>App Restart|/apps restart knuddelsDEV.30559001.Rollenspiele<°";
+    this.APP_RESTART = "°>App Restart|/apps restart knuddelsDEV.30559001.Rollenspiele<°";
     this.DB_DELETED = "Datenbanken gelöscht.";
     this.EXISTING_CHANS = "Folgende Channels existieren momentan:";
     this.I_ALREADY_PLAY = "Du spielst doch schon mit :)";
@@ -119,15 +119,6 @@ var STRINGS = (new function () {
             return nick + " darf den RPG Modus nun verändern";
         } else {
             return nick + " ist bereits für den RPG Modus freigeschaltet.";
-        }
-    };
-    this.welcome = function (nick) {
-        if (nick == "Tjeri") {
-            return "Willkommen, Herr und Meister!";
-        } else if (nick == "Serpouis") {
-            return "Ich wünsche dir einen wundervollen guten Tag werter wahnsinnig sympathischer Serpouis.";
-        } else if (nick == "Vampir Missy") {
-            return "Willkommen, Kätzchen!";
         }
     };
     this.wrongNick = function (nick) {
