@@ -4,7 +4,7 @@ var Users = (new function () {
         if (KnuddelsServer.canAccessUser(uid)) {
             return true
         } else if (user) {
-            user.sendPrivateMessage(STRINGS.cantAccess(nick));
+            user.sendPrivateMessage(STRINGS.user_cantAccess(nick));
         }
     };
 
@@ -13,7 +13,7 @@ var Users = (new function () {
             return true;
         } else {
             if (user) {
-                user.sendPrivateMessage(STRINGS.wrongNick(nick));
+                user.sendPrivateMessage(STRINGS.user_wrongNick(nick));
             }
             return false;
         }

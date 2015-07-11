@@ -10,8 +10,6 @@ var ChannelCover = (new function () {
                 channels.push(RS.name);
                 channels.sort();
                 saveChanDB(channels);
-            } else {
-                Log.dev("Tried 2 initialize ChannelCover in " + RS.name + ". Channel was already on the List.")
             }
             var cms = Channel.getOnlineCMs();
             saveCMDB(RS.name, cms);
@@ -34,14 +32,14 @@ var ChannelCover = (new function () {
 
     this.showList = function (user) {
         if (Settings.CHANS) {
-            var output = STRINGS.EXISTING_CHANS;
+            var output = STRINGS.channelCover_existingChannels;
             var channels = getChanDB();
             for (var i = 0; i < channels.length; ++i) {
                 var name = channels[i];
                 output += "°#°" + name + " - ";
                 var chanCMs = getCMDB(name);
                 if (chanCMs.length == 0) {
-                    output += STRINGS.noCMs(name);
+                    output += STRINGS.channelCover_noCMs(name);
                 } else {
                     for (var j = 0; j < chanCMs.length; ++j) {
                         if (j != 0) {
@@ -53,7 +51,7 @@ var ChannelCover = (new function () {
             }
             user.sendPrivateMessage(output);
         } else {
-            user.sendPrivateMessage(STRINGS.NOT_AVAILABLE);
+            user.sendPrivateMessage(STRINGS.command_notAvailable);
         }
     };
 

@@ -1,5 +1,6 @@
 function RPG(_host, _id) {
     var self = this;
+    var start = Date.now();
 
     var id = _id;
     var channel = RS.name;
@@ -22,101 +23,131 @@ function RPG(_host, _id) {
 
     this.setName = function (_user, _name) {
         if (isAllowed(_user)) {
-            sendPlayers(_user.getNick() + " hat den Namen vom RPG '" + getName() + "' gerade auf '" + _name + "' geändert.", true);
+            sendPlayers(STRINGS.rpg_name_changed(_user, getName(), _name), true);
             name = _name;
             save();
         } else {
-            _user.sendPrivateMessage("Du bist nicht berechtigt den Namen dieses RPG zu ändern.");
+            _user.sendPrivateMessage(STRINGS.rpg_name_notAllowed);
         }
+    };
+
+    this.getName = function () {
+        return name;
     };
 
     this.setTheme = function (_user, _theme) {
         if (isAllowed(_user)) {
             if (theme != "") {
-                sendPlayers(_user.getNick() + " hat das Thema vom RPG '" + getName() + "' gerade von '" + theme + "' auf '" + _theme + "' geändert.", true);
+                sendPlayers(STRINGS.rpg_theme_changed(_user, getName(), theme, _theme), true);
             } else {
-                sendPlayers(_user.getNick() + " hat das Thema vom RPG '" + getName() + "' gerade von auf '" + _theme + "' geändert.", true);
+                sendPlayers(STRINGS.rpg_theme_set(_user, getName(), _theme), true);
             }
             theme = _theme;
             save();
         } else {
-            _user.sendPrivateMessage("Du bist nicht berechtigt das Thema dieses RPG zu ändern.");
+            _user.sendPrivateMessage(STRINGS.rpg_theme_notAllowed);
         }
+    };
+
+    this.getTheme = function () {
+        return theme;
     };
 
     this.setDesc = function (_user, _desc) {
         if (isAllowed(_user)) {
-            _user.sendPrivateMessage("Die Beschreibung wurde geändert.");
+            _user.sendPrivateMessage(STRINGS.rpg_desc_changed(_desc));
             desc = _desc;
             save();
         } else {
-            _user.sendPrivateMessage("Du bist nicht berechtigt die Beschreibung dieses RPG zu ändern.");
+            _user.sendPrivateMessage(STRINGS.rpg_desc_notAllowed);
         }
+    };
+
+    this.getDesc = function () {
+        return desc;
+    };
+
+    this.getPlayers = function () {
+        return players;
+    };
+
+    this.getInfos = function () {
+        var _name = name == "" ? STRINGS.rpg_info_noName : name;
+        var _theme = theme == "" ? STRINGS.rpg_info_noTheme : theme;
+        var _desc = desc == "" ? STRINGS.rpg_info_noDesc : desc;
+        var _players = "";
+        var msec = Date.now() - start;
+        var hh = Math.floor(msec / 1000 / 60 / 60);
+        msec -= hh * 1000 * 60 * 60;
+        var mm = Math.floor(msec / 1000 / 60);
+        msec -= mm * 1000 * 60;
+        var ss = Math.floor(msec / 1000);
+        msec -= ss * 1000;
+        var time = (hh < 10 ? "0" + hh : hh) + ":" + (mm < 10 ? "0" + mm : mm) + ":" + (ss < 10 ? "0" + ss : ss) + "." + msec;
+        players.forEach(function (player) {
+            if (_players != "") {
+                _players += ", ";
+            }
+            var user = Users.get(Bot.get(), player);
+            if (isHost(user)) {
+                _players += "_" + user.getProfileLink() + "_" + STRINGS.rpg_info_host;
+            } else {
+                _players += user.getProfileLink();
+            }
+        });
+        return STRINGS.rpg_info(id, _name, _theme, _desc, _players, time);
     };
 
     this.changeHost = function (_user, _nick) {
         if (isAllowed(_user)) {
-            var user = Users.get(_nick);
-            var nick = user.getNick();
+            var user = Users.get(_user, _nick);
             if (user) {
+                var nick = user.getNick();
                 if (self.isPlaying(nick)) {
                     host = user;
                     save();
-                    sendPlayers(nick + " wurde gerade von " + _user.getNick() + " zum Spielleiter im RPG " + getName() + "ernannt.", true);
+                    host.sendPrivateMessage(STRINGS.rpg_newHost(_user, getName()) + STRINGS.rpgs_host(self));
+                    sendPlayers(STRINGS.rpg_newHost_players(nick, _user, getName()), false);
                 } else {
-                    _user.sendPrivateMessage(nick + " muss am Spiel teilnehmen, um den Spielleiterposten zu übernehmen.");
+                    _user.sendPrivateMessage(STRINGS.rpg_newHost_mustBePlayer(nick));
                 }
             }
         } else {
-            _user.sendPrivateMessage("Du kannst den Spielleiter in diesem RPG nicht ändern.");
+            _user.sendPrivateMessage(STRINGS.rpg_newHost_notAllowed);
         }
     };
 
-    this.addPlayer = function (_user, _nick) {
+    this.addPlayer = function (_user, player) {
         var silent = !isHost(_user);
         if (isAllowed(_user)) {
-            var user = Users.get(this.host, _nick);
-            if (user) {
-                if (addPlayer(user)) {
-                    save();
-                    if (!silent) {
-                        user.sendPrivateMessage("Du wurdest dem Play hinzugefügt");
-                    }
-                    _user.sendPrivateMessage(user.getNick() + " wurde als Spieler hinzugefügt.");
-                } else {
-                    _user.sendPrivateMessage(user.getNick() + " ist bereits in der Spielerliste.");
+            if (addPlayer(player)) {
+                save();
+                if (!silent) {
+                    player.sendPrivateMessage(STRINGS.rpg_added_you(_user, getName()));
                 }
+                _user.sendPrivateMessage(STRINGS.rpg_added_user_confirmation(player));
             }
         } else {
-            _user.sendPrivateMessage("Du kannst keine Spieler hinzufügen.");
+            _user.sendPrivateMessage(STRINGS.rpg_addPlayer_notAllowed);
         }
     };
 
     this.join = function (_user) {
         var nick = _user.getNick();
         if (declined.indexOf(nick) == -1) {
-            if (players.indexOf(nick) > -1) {
-                _user.sendPrivateMessage("Du spielst hier doch schon mit.");
-            } else {
-                host.sendPrivateMessage(nick + " möchte an deinem RPG teilnehmen. °>[Annehmen]|/accept " + id + ":" + nick.escapeKCode() + "<° °>[Ablehnen]|/decline " + id + ":" + nick.escapeKCode() + "<°");
-                _user.sendPrivateMessage("Ich werde " + host.getNick() + " gleich mal fragen :)");
-            }
+            host.sendPrivateMessage(STRINGS.rpg_join_question(nick, id));
+            _user.sendPrivateMessage(STRINGS.rpg_join_ask(host));
         } else {
-            _user.sendPrivateMessage("Der Beitritt für dieses RPG wurde bereits abgelehnt.");
+            _user.sendPrivateMessage(STRINGS.rpg_join_alreadyDeclined);
         }
     };
 
     this.acceptPlayer = function (_user, _player) {
         if (isHost(_user)) {
-            var player = Users.get(host, _player);
-            if (player) {
-                if (addPlayer(player)) {
-                    save();
-                    player.sendPrivateMessage("Du wurdest als Mitspieler akzeptiert.");
-                    host.sendPrivateMessage("Du hast " + player.getNick() + " als Mitspieler akzeptiert.");
-                } else {
-                    host.sendPrivateMessage(player.getNick() + " steht doch schon auf der Spielerliste.");
-                }
+            if (addPlayer(_player)) {
+                save();
+                _player.sendPrivateMessage(STRINGS.rpg_join_accepted(host));
+                host.sendPrivateMessage(STRINGS.rpg_join_userAccepted(_player));
             }
         }
     };
@@ -127,14 +158,14 @@ function RPG(_host, _id) {
             var nick = player.getNick();
             if (player) {
                 if (self.isPlaying(nick)) {
-                    host.sendPrivateMessage(nick + " wurde schon als Spieler hinzugefügt. Möchtest du ihn/sie löschen? °>[Löschen]|/removePlayer " + id + ":" + nick.escapeKCode() + "<°");
+                    host.sendPrivateMessage(STRINGS.rpg_decline_alreadyPlaying(nick, id));
                 } else {
                     if (declined.indexOf(nick) == -1) {
                         declined.push(nick);
-                        host.sendPrivateMessage(nick + " wurde abgelehnt. Er/Sie kann dem RPG nun nicht mehr beitreten.");
-                        player.sendPrivateMessage("Deine Anfrage wurde von " + host.getNick() + " abgelehnt.");
+                        host.sendPrivateMessage(STRINGS.rpg_declined_user(nick, id));
+                        player.sendPrivateMessage(STRINGS.rpg_declined(host));
                     } else {
-                        host.sendPrivateMessage(nick + " wurde bereits abgelehnt.");
+                        host.sendPrivateMessage(STRINGS.rpg_decline_alreadyDeclined(nick));
                     }
                 }
             }
@@ -146,43 +177,51 @@ function RPG(_host, _id) {
         var index = players.indexOf(nick);
         if (index > -1) {
             players.splice(index, 1);
-            _user.sendPrivateMessage("Du hast das RPG verlassen.");
+            _user.sendPrivateMessage(STRINGS.rpg_leave);
             if (players.length == 0) {
                 RPGS.isEmpty(id);
             } else {
                 if (isHost(_user)) {
                     host = Users.get(Bot.get(), players[0]);
-                    host.sendPrivateMessage(nick + " hat der RPG verlassen. Du bist neuer Spielleiter. Du kannst nun Spieler hinzufügen...");
-                    sendPlayers(nick + " hat das Spiel verlassen. " + host.getNick() + " ist nun neuer Spielleiter.");
+                    host.sendPrivateMessage(STRINGS.rpg_leave_userLeft(nick) + STRINGS.rpgs_host(self));
+                    sendPlayers(STRINGS.rpg_leave_newHost(nick, host), false);
                 } else {
-                    sendPlayers(nick + " hat das RPG verlassen.", true);
+                    sendPlayers(STRINGS.rpg_leave_userLeft(nick), true);
                 }
                 save();
             }
         } else {
-            _user.sendPrivateMessage("Du nimmst an diesem RPG nicht teil.");
+            _user.sendPrivateMessage(STRINGS.rpg_leave_notPlaying);
         }
     };
 
     this.removePlayer = function (_user, _player) {
         var silent = !isHost(_user);
         if (isAllowed(_user)) {
-            var player = Users.get(this.host, _player);
+            var player = Users.get(host, _player);
             if (player) {
                 if (player.getNick() == _user.getNick()) {
-                    _user.sendPlayers("Du kannst dich nicht selbst entfernen. Bitte nutze /leave ID zum Verlassen der Gruppe.");
+                    _user.sendPlayers(STRINGS.rpg_removePlayer_leave(id));
                 } else if (removePlayer(player)) {
                     save();
                     if (!silent) {
-                        player.sendPrivateMessage("Du wurdest von der Spielerliste gelöscht.");
+                        player.sendPrivateMessage(STRINGS.rpg_removePlayer_removedYou(_user, getName()));
                     }
-                    _user.sendPrivateMessage(player.getNick() + " wurde von der Spielerliste entfernt.");
+                    _user.sendPrivateMessage(STRINGS.rpg_removePlayer_removed(player));
                 } else {
-                    _user.sendPrivateMessage(player.getNick() + " steht nicht auf der Spielerliste.");
+                    _user.sendPrivateMessage(STRINGS.rpg_removePlayer_notPlaying(player));
                 }
             }
         } else {
-            _user.sendPrivateMessage("Du kannst keine Spieler löschen.");
+            _user.sendPrivateMessage(STRINGS.rpg_removePlayer_notAllowed);
+        }
+    };
+
+    this.getHostInfos = function(_user) {
+        if (isHost(_user)) {
+            _user.sendPrivateMessage(STRINGS.rpgs_host(self));
+        } else {
+            STRINGS.command_notAllowed;
         }
     };
 
@@ -190,12 +229,12 @@ function RPG(_host, _id) {
         if (isAllowed(_user)) {
             players.forEach(function (nick) {
                 var player = Users.get(_user, nick);
-                player.sendPrivateMessage(_user.getNick() + " hat das RPG beendet. Danke fürs Spielen! :)");
+                player.sendPrivateMessage(STRINGS.rpg_end(_user));
             });
             DB.delStr(Keys.RPG + id);
             return true;
         } else {
-            _user.sendPrivateMessage("Du bist nicht berechtigt dieses RPG zu beenden.");
+            _user.sendPrivateMessage(STRINGS.rpg_end_notAllowed);
         }
     };
 
@@ -217,9 +256,9 @@ function RPG(_host, _id) {
             if (count > 0) {
                 out += ", ";
             }
-            var user = Users.get(undefined, player);
+            var user = Users.get(Bot.get(), player);
             if (isHost(user)) {
-                out += "_" + user.getProfileLink() + "_";
+                out += "_" + user.getProfileLink() + "_" + STRINGS.rpg_info_host;
             } else {
                 out += user.getProfileLink();
             }
@@ -261,8 +300,8 @@ function RPG(_host, _id) {
                 RPGS.isEmpty(id);
             } else if (isHost(_user)) {
                 host = Users.get(_user, players[0]);
-                host.sendPrivateMessage(nick + " hat der RPG verlassen. Du bist neuer Spielleiter. Du kannst nun Spieler hinzufügen...");
-                sendPlayers(nick + " hat der RPG verlassen. " + host.getNick() + " ist neuer Spielleiter.", false);
+                host.sendPrivateMessage(STRINGS.rpg_leave_userLeft(nick) + STRINGS.rpgs_host(self));
+                sendPlayers(STRINGS.rpg_leave_newHost(nick, host), false);
             }
             return true;
         }
@@ -284,7 +323,7 @@ function RPG(_host, _id) {
     function sendPlayers(_msg, _sendHost) {
         players.forEach(function (player) {
             if (_sendHost || player != host.getNick()) {
-                Users.get(null, player).sendPrivateMessage(_msg);
+                Users.get(Bot.get(), player).sendPrivateMessage(_msg);
             }
         });
     }

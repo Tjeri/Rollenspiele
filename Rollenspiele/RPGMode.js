@@ -4,11 +4,10 @@ var RPGS = (new function () {
 
     var rpgs = [];
 
-    this.onShutdown = function() {
-        rpgs.forEach(function(rpg) {
+    this.onShutdown = function () {
+        rpgs.forEach(function (rpg) {
             rpg.delete(Bot.get());
         });
-        DB.delObj(Keys.RPG_NUMS);
     };
 
     this.startRPGMode = function (_silent) {
@@ -16,7 +15,7 @@ var RPGS = (new function () {
             rpgMode = true;
             HtmlBox.sendAllRPGHint();
             if (!_silent) {
-                RS.sendPub(STRINGS.SWITCH_RPG_ON);
+                RS.sendPub(STRINGS.rpgMode_switch_on);
             }
         }
     };
@@ -26,17 +25,16 @@ var RPGS = (new function () {
             rpgMode = false;
             HtmlBox.removeAllContent();
             if (!_silent) {
-                RS.sendPub(STRINGS.SWITCH_RPG_OFF);
+                RS.sendPub(STRINGS.rpgMode_switch_off);
             }
         }
     };
 
     this.createRPG = function (_user, _nick) {
         if (RS.isAllowed(_user) || Mods.isMod(_user)) {
-            var nick = _user.getNick();
             var host = Users.get(_user, _nick);
             if (host) {
-                nick = host.getNick();
+                var nick = host.getNick();
                 if (!isPlaying(nick)) {
                     var id = DB.addNum(Keys.RPG_COUNTER, 1);
                     var rpg = new RPG(host, id);
@@ -45,46 +43,81 @@ var RPGS = (new function () {
                     rpg_nums.push(id);
                     saveRPGNums(rpg_nums);
                     rpgs.push(rpg);
-                    _user.sendPrivateMessage("Das RPG mit " + nick + " als Spielleiter wurde mit der id " + id + " gestartet.");
-                    host.sendPrivateMessage(_user.getNick() + " hat für dich ein RPG gestartet. Du bist Spielleiter und kannst nun Spieler hinzufügen etc.");
+                    _user.sendPrivateMessage(STRINGS.rpgs_created(id, nick));
+                    host.sendPrivateMessage(STRINGS.rpgs_start(_user) + STRINGS.rpgs_host(rpg));
                     self.startRPGMode(false);
                 } else {
-                    _user.sendPrivateMessage(nick + " spielt bereits.");
+                    _user.sendPrivateMessage(STRINGS.rpgs_alreadyPlaying(nick));
                 }
             }
         } else {
-            _user.sendPrivateMessage("Du bist nicht berechtigt RPGs anzulegen.");
+            _user.sendPrivateMessage(STRINGS.rpgs_create_notAllowed);
         }
     };
 
     this.setName = function (_user, _id, _name) {
-        var rpg = getRPG(_id);
+        var rpg;
+        if (!_id) {
+            rpg = getRPGByNick(_user.getNick());
+        } else {
+            rpg = getRPG(_id);
+        }
         if (rpg) {
             rpg.setName(_user, _name);
         } else {
-            _user.sendPrivateMessage("Ein RPG mit der ID " + _id + " existiert nicht.");
+            if (!_id) {
+                _user.sendPrivateMessage(STRINGS.rpgs_notPlaying);
+            } else {
+                _user.sendPrivateMessage(STRINGS.rpgs_notExisting(_id));
+            }
         }
     };
 
     this.setTheme = function (_user, _id, _theme) {
-        var rpg = getRPG(_id);
+        var rpg;
+        if (!_id) {
+            rpg = getRPGByNick(_user.getNick());
+        } else {
+            rpg = getRPG(_id);
+        }
         if (rpg) {
             rpg.setTheme(_user, _theme);
         } else {
-            _user.sendPrivateMessage("Ein RPG mit der ID " + _id + " existiert nicht.");
+            if (!_id) {
+                _user.sendPrivateMessage(STRINGS.rpgs_notPlaying);
+            } else {
+                _user.sendPrivateMessage(STRINGS.rpgs_notExisting(_id));
+            }
         }
     };
 
     this.setDesc = function (_user, _id, _desc) {
-        var rpg = getRPG(_id);
+        var rpg;
+        if (!_id) {
+            rpg = getRPGByNick(_user.getNick());
+        } else {
+            rpg = getRPG(_id);
+        }
         if (rpg) {
             rpg.setDesc(_user, _desc);
         } else {
-            _user.sendPrivateMessage("Ein RPG mit der ID " + _id + " existiert nicht.");
+            if (!_id) {
+                _user.sendPrivateMessage(STRINGS.rpgs_notPlaying);
+            } else {
+                _user.sendPrivateMessage(STRINGS.rpgs_notExisting(_id));
+            }
         }
     };
 
     this.removeRPG = function (_user, _id) {
+        if (!_id) {
+            rpg = getRPGByNick(_user.getNick());
+            if (!rpg) {
+                _user.sendPrivateMessage(STRINGS.rpgs_notPlaying);
+                return;
+            }
+            _id = rpg.getId();
+        }
         var index = -1;
         rpgs.some(function (rpg, i) {
             if (rpg.getId() == _id) {
@@ -105,16 +138,33 @@ var RPGS = (new function () {
                 }
             }
         } else {
-            _user.sendPrivateMessage("Dieses RPG existiert nicht.");
+            _user.sendPrivateMessage(STRINGS.rpgs_notExisting(_id));
         }
     };
 
     this.addPlayer = function (_user, _id, _player) {
-        var rpg = getRPG(_id);
-        if (rpg) {
-            rpg.addPlayer(_user, _player);
-        } else {
-            _user.sendPrivateMessage("Ein RPG mit der id " + _id + " existiert nicht.");
+        var rpg;
+        var player = Users.get(_user, _player);
+        if (player) {
+            var nick = player.getNick();
+            if (!isPlaying(nick)) {
+                if (!_id) {
+                    rpg = getRPGByNick(_user.getNick());
+                } else {
+                    rpg = getRPG(_id);
+                }
+                if (rpg) {
+                    rpg.addPlayer(_user, player);
+                } else {
+                    if (!_id) {
+                        _user.sendPrivateMessage(STRINGS.rpgs_notPlaying);
+                    } else {
+                        _user.sendPrivateMessage(STRINGS.rpgs_notExisting(_id));
+                    }
+                }
+            } else {
+                _user.sendPrivateMessage(STRINGS.rpgs_alreadyPlaying(nick));
+            }
         }
     };
 
@@ -125,9 +175,17 @@ var RPGS = (new function () {
     this.acceptPlayer = function (_user, _id, _player) {
         var rpg = getRPG(_id);
         if (rpg) {
-            rpg.acceptPlayer(_user, _player);
+            var player = Users.get(_user, _player);
+            var nick = player.getNick();
+            if (player) {
+                if (!isPlaying(nick)) {
+                    rpg.acceptPlayer(_user, player);
+                } else {
+                    _user.sendPrivateMessage(STRINGS.rpgs_alreadyPlaying(nick));
+                }
+            }
         } else {
-            _user.sendPrivateMessage("Ein RPG mit der id " + _id + " existiert nicht.");
+            _user.sendPrivateMessage(STRINGS.rpgs_notExisting(_id));
         }
     };
 
@@ -136,25 +194,52 @@ var RPGS = (new function () {
         if (rpg) {
             rpg.declinePlayer(_user, _player);
         } else {
-            _user.sendPrivateMessage("Ein RPG mit der id " + _id + " existiert nicht.");
+            _user.sendPrivateMessage(STRINGS.rpgs_notExisting(_id));
         }
     };
 
     this.removePlayer = function (_user, _id, _player) {
-        var rpg = getRPG(_id);
+        var rpg;
+        if (!_id) {
+            rpg = getRPGByNick(_user.getNick());
+        } else {
+            rpg = getRPG(_id);
+        }
         if (rpg) {
             rpg.removePlayer(_user, _player);
         } else {
-            _user.sendPrivateMessage("Ein RPG mit der id " + _id + " existiert nicht.");
+            if (!_id) {
+                _user.sendPrivateMessage(STRINGS.rpgs_notPlaying);
+            } else {
+                _user.sendPrivateMessage(STRINGS.rpgs_notExisting(_id));
+            }
         }
     };
 
-    this.changeHost = function (_user, _id, _nick) {
-        var rpg = getRPG(_id);
-        if (rpg) {
-            rpg.changeHost(_user, _nick);
+    this.changeHost = function (_user, _id, _player) {
+        var rpg;
+        if (!_id) {
+            rpg = getRPGByNick(_user.getNick());
         } else {
-            _user.sendPrivateMessage("Ein RPG mit der ID " + _id + " existiert nicht.");
+            rpg = getRPG(_id);
+        }
+        if (rpg) {
+            rpg.changeHost(_user, _player);
+        } else {
+            if (!_id) {
+                _user.sendPrivateMessage(STRINGS.rpgs_notPlaying);
+            } else {
+                _user.sendPrivateMessage(STRINGS.rpgs_notExisting(_id));
+            }
+        }
+    };
+
+    this.getHostInfos = function (_user) {
+        var rpg = getRPGByNick(_user.getNick());
+        if (rpg) {
+            rpg.getHostInfos(_user);
+        } else {
+            _user.sendPrivateMessage(STRINGS.rpgs_notPlaying);
         }
     };
 
@@ -163,16 +248,20 @@ var RPGS = (new function () {
         if (rpg) {
             rpg.leave(_user);
         } else {
-            _user.sendPrivateMessage("Ein RPG mit der id " + _id + " existiert nicht.");
+            _user.sendPrivateMessage(STRINGS.rpgs_notExisting(_id));
         }
     };
 
     this.joinRPG = function (_user, _id) {
         var rpg = getRPG(_id);
         if (rpg) {
-            rpg.join(_user);
+            if (!isPlaying(_user.getNick())) {
+                rpg.join(_user);
+            } else {
+                _user.sendPrivateMessage(STRINGS.rpgs_user_alreadyPlaying);
+            }
         } else {
-            _user.sendPrivateMessage("Ein RPG mit der id " + _id + " existiert nicht.");
+            _user.sendPrivateMessage(STRINGS.rpgs_notExisting(_id));
         }
     };
 
@@ -182,7 +271,7 @@ var RPGS = (new function () {
 
     this.userJoined = function (_user) {
         if (rpgMode) {
-            Bot.prv(_user, STRINGS.RPG_PRV);
+            Bot.prv(_user, STRINGS.rpgMode_userJoined);
             HtmlBox.sendRPGHint(_user);
         }
     };
@@ -203,36 +292,47 @@ var RPGS = (new function () {
         }
     };
 
-    this.showRPGList = function (_user) {
-        var rpg_nums = getRPGNums();
-        if (rpg_nums.length == 0) {
-            _user.sendPrivateMessage("Momentan laufen keine RPGs.");
+    this.showRPG = function (_user, _id) {
+        var rpg = getRPG(_id);
+        if (rpg) {
+            _user.sendPrivateMessage(rpg.getInfos());
         } else {
-            var out = "Folgende RPGs laufen gerade:";
-            rpg_nums.forEach(function (_id) {
-                var str = DB.getStr(Keys.RPG + _id, "");
-                if (str != "") {
-                    out += "°#°" + str;
-                } else {
-                    out += "°#" + _id;
-                }
-            });
-            _user.sendPrivateMessage(out);
+            _user.sendPrivateMessage(STRINGS.rpgs_notExisting(_id));
         }
     };
 
+    this.showRPGList = function (_user) {
+        var rpg_nums = getRPGNums();
+        if (rpg_nums.length == 0) {
+            _user.sendPrivateMessage(STRINGS.rpgs_noRunningRPGs);
+        } else {
+            var str = "";
+            rpg_nums.forEach(function (_id) {
+                var str = DB.getStr(Keys.RPG + _id, "");
+                if (str != "") {
+                    str += "°#°" + str;
+                } else {
+                    str += "°#" + _id;
+                }
+            });
+            _user.sendPrivateMessage(STRINGS.rpgs_running(str));
+        }
+    };
+
+    this.showPlayers = function (_user, _id) {
+        var rpg = getRPG(_id);
+        _user.sendPrivateMessage(rpg.toString());
+    };
+
     function getRPGByNick(_nick) {
-        var index = -1;
-        rpgs.some(function (_id, _index) {
-            var _rpg = getRPG(_id);
-            if (_rpg.getChannel() == RS.name && _rpg.isPlaying(_nick)) {
-                index = _index;
+        var rpg;
+        rpgs.some(function (_rpg) {
+            if (_rpg.isPlaying(_nick)) {
+                rpg = _rpg;
                 return true;
             }
         });
-        if (index > -1) {
-            return rpgs[index];
-        }
+        return rpg;
     }
 
     this.onPublicMessage = function (_user, _msg) {
@@ -246,7 +346,7 @@ var RPGS = (new function () {
                 if ((start || end) && _msg.length == 1) {
                     return;
                 }
-                _user.sendPrivateMessage(STRINGS.askRPG(start, end));
+                _user.sendPrivateMessage(STRINGS.rpgMode_publicMessage(start, end));
             }
         }
     };
