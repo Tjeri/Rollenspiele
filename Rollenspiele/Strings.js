@@ -16,35 +16,8 @@ var STRINGS = (new function () {
     this.command_usage = function (command) {
         return "Bitte nutze die Funktion folgendermaßen: " + command;
     };
-    this.help = function (cm) {
-        var out = "Funktionen:";
-        out += "°#°/app - Ruft diese Hilfe auf.";
-        if (cm) {
-            out += "°#°/chans - Zeigt alle offenen RS Channel mit anwesenden CMs."
-        }
-        if (cm) {
-            out += "°#°/juschu NICK - Ermahnt NICK, dass das sexuelle Anschreiben Jugendlicher zur Sperrung führen kann."
-        }
-        if (cm) {
-            out += "°#°/klammern NICK - Ermahnt NICK Klammern um seine Texte zu setzen."
-        }
-        out += "°#°/player - Zeigt die aktiven Spieler.";
-        out += "°#°/player NICK - Fügt NICK als Mitspieler im aktuellen RPG hinzu.";
-        out += "°#°/player !NICK - Löscht NICK als Mitspieler im aktuellen RPG.";
-        if (cm) {
-            out += "°#°/removeWindow NICK - Entfernt das RPG Hinweisfenster bei NICK.";
-        }
-        out += "°#°/rpg - Zeigt an, ob der RPG Modus an oder aus ist.";
-        out += "°#°/rpg on - aktiviert den RPG Modus.";
-        out += "°#°/rpg off - deaktiviert den RPG Modus.";
-        if (cm) {
-            out += "°#°/srpg - wie /rpg, nur die öffentlichen Nachrichten zum aktivieren/deaktivieren werden nicht gezeigt.";
-        }
-        if (cm) {
-            out += "°#°°#°Alle Funktionen in /Elrohir testbar.";
-        }
-        return out;
-    };
+    this.help = "Alle Funktionen findest du °>[HIER]|https://github.com/Tjeri/Rollenspiele/wiki/Befehle<°°#°°>[ChangeLog]|https://github.com/Tjeri/Rollenspiele/wiki/Changelog<°°#°Alle Funktionen in /Elrohir testbar.";
+
     this.html_removed = function (user) {
         return "Fenster bei " + user.getNick() + " entfernt.";
     };
@@ -59,7 +32,7 @@ var STRINGS = (new function () {
         return nick + " ist schon Mod.";
     };
     this.mod_list = function (nicks) {
-        return "Momentane Mods: " + nicks == "" ? "Keine" : nicks;
+        return "Momentane Mods: " + (nicks == "" ? "Keine" : nicks);
     };
     this.mod_isNot = function (nick) {
         return nick + " ist kein Mod.";
@@ -87,7 +60,7 @@ var STRINGS = (new function () {
         return "Deine Anfrage wurde von " + user.getNick() + " abgelehnt."
     };
     this.rpg_declined_user = function (nick, id) {
-        return nick + " wurde abgelehnt. Er/Sie kann dem RPG nun nicht mehr beitreten. Du kannst ihn/sie aber immer noch als Spieler hinzufügen. °>[Hinzufügen]|/addPlayer " + id + ":" + nick + "<°";
+        return nick + " wurde abgelehnt. Er/Sie kann dem RPG nun nicht mehr beitreten. Du kannst ihn/sie aber immer noch als Spieler hinzufügen. °>[Hinzufügen]|/tryAddPlayer " + id + ":" + nick + "<°";
     };
     this.rpg_desc_changed = function (desc) {
         return "Die neue Beschreibung ist: °#°" + desc;
@@ -97,8 +70,11 @@ var STRINGS = (new function () {
         return user.getNick() + " hat das RPG beendet. Danke fürs Spielen! :)";
     };
     this.rpg_end_notAllowed = "Du bist nicht berechtigt dieses RPG zu beenden.";
-    this.rpg_info = function (id, name, theme, desc, players, time) {
-        return "°#°_ID_: " + id + "°#°_Name_: " + name + "°#°_Thema_: " + theme + "°#°_Beschreibung_: " + desc + "°#°_Spieler_: " + players + "°#°_Spielzeit_: " + time;
+    this.rpg_info = function (id, name, theme, desc, players, playtime, time) {
+        if (playtime == "00:00:00.000") {
+            playtime = "Spiel läuft nicht";
+        }
+        return "°#°_ID_: " + id + "°#°_Name_: " + name + "°#°_Thema_: " + theme + "°#°_Beschreibung_: " + desc + "°#°_Spieler_: " + players + "°#°_Spielzeit_: " + playtime + "°#°_Gesamt Spielzeit_: " + time;
     };
     this.rpg_info_noName = "Kein Name festgelegt";
     this.rpg_info_noTheme = "Kein Thema festgelegt";
@@ -123,7 +99,7 @@ var STRINGS = (new function () {
     };
     this.rpg_leave_notPlaying = "Du nimmst an diesem RPG nicht teil.";
     this.rpg_leave_userLeft = function (nick) {
-        return nick + " hat der RPG verlassen.";
+        return nick + " hat das RPG verlassen.";
     };
     this.rpg_name_changed = function (user, oldName, newName) {
         return user.getNick() + " hat den Namen vom RPG '" + oldName + "' gerade auf '" + newName + "' geändert."
@@ -137,10 +113,10 @@ var STRINGS = (new function () {
     };
     this.rpg_newHost_notAllowed = "Du kannst den Spielleiter in diesem RPG nicht ändern.";
     this.rpg_newHost_players = function (nick, user, name) {
-        return nick + " wurde gerade von " + user.getNick() + " zum Spielleiter im RPG '" + name + "'ernannt."
+        return nick + " wurde gerade von " + user.getNick() + " zum Spielleiter im RPG '" + name + "' ernannt."
     };
     this.rpg_removePlayer_leave = function (id) {
-        return "Du kannst dich nicht selbst entfernen. Bitte nutze /leave ID zum Verlassen der Gruppe. °>[Gruppe verlassen]|°>/leave " + id + "<°";
+        return "Du kannst dich nicht selbst entfernen. Bitte nutze /leave ID zum Verlassen der Gruppe. °>[Gruppe verlassen]|>/leave " + id + "<°";
     };
     this.rpg_removePlayer_notAllowed = "Du kannst keine Spieler löschen.";
     this.rpg_removePlayer_notPlaying = function (user) {
@@ -163,19 +139,20 @@ var STRINGS = (new function () {
         return nick + " spielt bereits.";
     };
     this.rpgs_create_notAllowed = "Du bist leider nicht berechtigt RPGs anzulegen. Bitte wende dich bei Fragen an " + KnuddelsServer.getAppDeveloper().getProfileLink();
-    this.rpgs_created = function (id, nick) {
-        return "Das RPG mit der ID " + id + " wurde gestartet. Als Spielleiter hast du " + nick + " festgelegt.";
+    this.rpgs_created = function (id, host) {
+        return "Das RPG mit der ID " + id + " wurde gestartet. Als Spielleiter hast du " + host.getNick() + " festgelegt.";
     };
     this.rpgs_host = function (rpg) {
-        var id = rpg.getId();
-        var name = rpg.getName() == "" ? "°#°°>Namen setzen|/tf-overridesb /setName " + id + ":[NAME]<° - Jedes RPG sollte einen Namen haben :)"
-            : "°#°°>Namen ändern|/tf-overridesb /setName " + id + ":[NAME]<° - aktueller Name: " + rpg.getName();
-        var theme = rpg.getTheme() == "" ? "°#°°>Thema setzen|/tf-overridesb /setTheme " + id + ":[THEMA]<° - Mögliche Themen sind z.B. AZ, NZ, EZ"
-            : "°#°°>Thema ändern|/tf-overridesb /setTheme " + id + ":[THEMA]<° - aktuelles Thema: " + rpg.getTheme();
-        var desc = rpg.getDesc() == "" ? "°#°°>Beschreibung setzen|/tf-overridesb /setDesc " + id + ":[BESCHREIBUNG]<° - Damit kannst du beschreiben, worum es in diesem RPG geht."
-            : "°#°°>Beschreibung ändern|/tf-overridesb /setDesc " + id + ":[BESCHREIBUNG]<° - aktuelle Beschreibung: °#° - " + rpg.getDesc();
-        var host = rpg.getPlayers().length == 1 ? "" : "°>Einen anderen zum Spielleiter machen|/tf-overridesb /changeHost " + id + ":[NICK]<° - Eine andere Person hat dann die Möglichkeit dieses RPG zu verwalten, du verlierst das Recht. Du kannst nur einen Mitspieler zum Spielleiter machen.";
-        return "°#°Du bist Spielleiter und hast nun folgende Möglichkeiten:"
+        var id = rpg.id;
+        var startEnd = rpg.running ? "°#°Das °>[Spiel Beenden]|/end " + rpg.id + "<°" : "°#° Das °>[Spiel Starten]|/start " + rpg.id + "<°";
+        var name = rpg.name == "" ? "°#°°>Namen setzen|/tf-overridesb /setName " + id + ":[NAME]<° - Jedes RPG sollte einen Namen haben :)"
+            : "°#°°>Namen ändern|/tf-overridesb /setName " + id + ":[NAME]<° - aktueller Name: " + rpg.name;
+        var theme = rpg.theme == "" ? "°#°°>Thema setzen|/tf-overridesb /setTheme " + id + ":[THEMA]<° - Mögliche Themen sind z.B. AZ, NZ, EZ"
+            : "°#°°>Thema ändern|/tf-overridesb /setTheme " + id + ":[THEMA]<° - aktuelles Thema: " + rpg.theme;
+        var desc = rpg.desc == "" ? "°#°°>Beschreibung setzen|/tf-overridesb /setDesc " + id + ":[BESCHREIBUNG]<° - Damit kannst du beschreiben, worum es in diesem RPG geht."
+            : "°#°°>Beschreibung ändern|/tf-overridesb /setDesc " + id + ":[BESCHREIBUNG]<° - aktuelle Beschreibung: °#°" + rpg.desc;
+        var host = rpg.players.length == 1 ? "" : "°#°°>Einen anderen zum Spielleiter machen|/tf-overridesb /changeHost " + id + ":[NICK]<° - Eine andere Person hat dann die Möglichkeit dieses RPG zu verwalten, du verlierst das Recht. Du kannst nur einen Mitspieler zum Spielleiter machen.";
+        return "°#°Als Spielleiter hast du folgende Möglichkeiten:" + startEnd
             + "°#°°>Spieler hinzufügen|/tf-overridesb /addPlayer " + id + ":[NICK]<°"
             + "°#°°>Spieler entfernen|/tf-overridesb /removePlayer " + id + ":[NICK]<°"
             + name + theme + desc + host

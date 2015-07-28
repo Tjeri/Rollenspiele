@@ -9,31 +9,36 @@ var App = (new function () {
 
     this.chatCommands = RS.commands;
 
+    this.onAppEventReceived = function (appInstance, type, data) {
+        Log.dev("Event: " + type + " in " + Channel.getName());
+        RS.onAppEventReceived(appInstance, type, data);
+    };
+
     this.onAppStart = function () {
         RS.onAppStart();
+    };
+
+    this.onKnuddelReceived = function (_sender, _receiver, _knuddelAmount, _transferReason) {
+        RS.onKnuddelReceived(_sender, _receiver, _knuddelAmount, _transferReason);
+    };
+
+    this.onPrivateMessage = function (_privateMessage) {
+        RS.onPrivateMessage(_privateMessage);
+    };
+
+    this.onPublicMessage = function (_publicMessage) {
+        RS.onPublicMessage(_publicMessage.getAuthor(), _publicMessage.getText());
     };
 
     this.onShutdown = function () {
         RS.onShutdown();
     };
 
-    this.onUserJoined = function (user) {
-        RS.onUserJoined(user);
+    this.onUserJoined = function (_user) {
+        RS.onUserJoined(_user);
     };
 
-    this.onUserLeft = function (user) {
-        RS.onUserLeft(user);
-    };
-
-    this.onKnuddelReceived = function (sender, receiver, knuddelAmount, transferReason) {
-        RS.onKnuddelReceived(sender, receiver, knuddelAmount, transferReason);
-    };
-
-    this.onPublicMessage = function (publicMessage) {
-        RS.onPublicMessage(publicMessage.getAuthor(), publicMessage.getText());
-    };
-
-    this.onPrivateMessage = function (privateMessage) {
-        RS.onPrivateMessage(privateMessage);
+    this.onUserLeft = function (_user) {
+        RS.onUserLeft(_user);
     };
 }());

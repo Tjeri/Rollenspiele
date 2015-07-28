@@ -1,88 +1,59 @@
 var ChannelCover = (new function () {
-    var init = false;
-
     this.initialize = function () {
-        if (Settings.CHANS && !init) {
-            init = true;
-
-            var channels = getChanDB();
-            if (channels.indexOf(RS.name) == -1) {
-                channels.push(RS.name);
-                channels.sort();
-                saveChanDB(channels);
-            }
-            var cms = Channel.getOnlineCMs();
-            saveCMDB(RS.name, cms);
-        }
-    };
-
-    this.remove = function () {
-        if (Settings.CHANS) {
-            var channels = getChanDB();
-            for (var i = 0; i < channels.length; ++i) {
-                if (channels[i] == RS.name) {
-                    channels.splice(i, 1);
-                    init = false;
-                    break;
-                }
-            }
+        var chan = Channel.getName();
+        var channels = getChanDB();
+        if (channels.indexOf(chan) == -1) {
+            channels.push(chan);
+            channels.sort();
             saveChanDB(channels);
+            saveCMDB(chan, Channel.getOnlineCMs());
         }
     };
 
     this.showList = function (user) {
-        if (Settings.CHANS) {
-            var output = STRINGS.channelCover_existingChannels;
-            var channels = getChanDB();
-            for (var i = 0; i < channels.length; ++i) {
-                var name = channels[i];
-                output += "°#°" + name + " - ";
-                var chanCMs = getCMDB(name);
-                if (chanCMs.length == 0) {
-                    output += STRINGS.channelCover_noCMs(name);
-                } else {
-                    for (var j = 0; j < chanCMs.length; ++j) {
-                        if (j != 0) {
-                            output += ", ";
-                        }
-                        output += chanCMs[j].getProfileLink();
+        var output = STRINGS.channelCover_existingChannels;
+        var channels = getChanDB();
+        for (var i = 0; i < channels.length; ++i) {
+            var name = channels[i];
+            output += "°#°" + name + " - ";
+            var chanCMs = getCMDB(name);
+            if (chanCMs.length == 0) {
+                output += STRINGS.channelCover_noCMs(name);
+            } else {
+                for (var j = 0; j < chanCMs.length; ++j) {
+                    if (j != 0) {
+                        output += ", ";
                     }
+                    output += chanCMs[j].getProfileLink();
                 }
             }
-            user.sendPrivateMessage(output);
-        } else {
-            user.sendPrivateMessage(STRINGS.command_notAvailable);
         }
+        user.sendPrivateMessage(output);
     };
 
     this.userJoined = function (user) {
-        if (Settings.CHANS) {
-            var channels = getChanDB();
-            if (channels.indexOf(RS.name) == -1) {
-                this.initialize();
-            } else if (user.isChannelModerator()) {
-                var cms = Channel.getOnlineCMs();
-                saveCMDB(RS.name, cms);
-            }
+        var chan = Channel.getName();
+        var channels = getChanDB();
+        if (channels.indexOf(chan) == -1) {
+            channels.push(chan);
+            channels.sort();
+            saveChanDB(channels);
+            saveCMDB(chan, Channel.getOnlineCMs());
+        } else if (user.isChannelModerator()) {
+            saveCMDB(chan, Channel.getOnlineCMs());
         }
     };
 
     this.userLeft = function (user) {
-        if (Settings.CHANS) {
-            if (Channel.getUsers(UserType.Human).length == 0) {
-                var channels = getChanDB();
-                for (var j = 0; j < channels.length; ++j) {
-                    if (channels[j] == RS.name) {
-                        channels.splice(j, 1);
-                        init = false;
-                        break;
-                    }
-                }
-                saveChanDB(channels);
-            } else if (user.isChannelModerator()) {
-                var cms = Channel.getOnlineCMs();
-                saveCMDB(RS.name, cms);
-            }
+        var chan = Channel.getName();
+        if (Channel.getUsers(UserType.Human).length == 0) {
+            var channels = getChanDB();
+            var index = channels.indexOf(chan);
+            channels.splice(index, 1);
+            saveChanDB(channels);
+        } else if (user.isChannelModerator()) {
+            var cms = Channel.getOnlineCMs();
+            saveCMDB(chan, cms);
         }
     };
 
@@ -91,7 +62,7 @@ var ChannelCover = (new function () {
     }
 
     function getCMDB(_chan) {
-        return DB.getObj(_chan, []);
+        return DB.getObj(Keys.CHANNEL + _chan, []);
     }
 
     function saveChanDB(_db) {
@@ -99,6 +70,6 @@ var ChannelCover = (new function () {
     }
 
     function saveCMDB(_chan, _db) {
-        DB.saveObj(_chan, _db);
+        DB.saveObj(Keys.CHANNEL + _chan, _db);
     }
 }());

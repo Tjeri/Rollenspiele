@@ -1,330 +1,387 @@
 function RPG(_host, _id) {
-    var self = this;
-    var start = Date.now();
+    this.start = Date.now();
+    this.time = 0;
 
-    var id = _id;
-    var channel = RS.name;
+    this.id = _id;
+    this.channel = Channel.getName();
+    this.running = true;
 
-    var host = _host;
-    var players = [_host.getNick()];
-    var name = "";
-    var theme = "";
-    var desc = "";
+    this.host = _host;
+    this.players = [_host.getUserId()];
+    this.name = "";
+    this.theme = "";
+    this.desc = "";
 
-    var declined = [];
+    this.open = false;
+    this.declined = [];
+}
 
-    this.getId = function () {
-        return id;
-    };
+// COMMAND METHODS
 
-    this.getChannel = function () {
-        return channel;
-    };
-
-    this.setName = function (_user, _name) {
-        if (isAllowed(_user)) {
-            sendPlayers(STRINGS.rpg_name_changed(_user, getName(), _name), true);
-            name = _name;
-            save();
-        } else {
-            _user.sendPrivateMessage(STRINGS.rpg_name_notAllowed);
-        }
-    };
-
-    this.getName = function () {
-        return name;
-    };
-
-    this.setTheme = function (_user, _theme) {
-        if (isAllowed(_user)) {
-            if (theme != "") {
-                sendPlayers(STRINGS.rpg_theme_changed(_user, getName(), theme, _theme), true);
+RPG.acceptPlayer = function (_rpg, _user, _player) {
+    if (_rpg.open) {
+        if (_rpg.running) {
+            if (RPG.tryAddPlayer(_rpg, _user, _player)) {
+                _player.sendPrivateMessage(STRINGS.rpg_join_accepted(_user));
+                _user.sendPrivateMessage(STRINGS.rpg_join_userAccepted(_player));
             } else {
-                sendPlayers(STRINGS.rpg_theme_set(_user, getName(), _theme), true);
+                _user.sendPrivateMessage(_player.getNick() + " ist doch schon im Spiel.");
             }
-            theme = _theme;
-            save();
         } else {
-            _user.sendPrivateMessage(STRINGS.rpg_theme_notAllowed);
+            _user.sendPrivateMessage("Dieses RPG läuft grade nicht. Bitte starte es oder benutze /addPlayer ID:NICK um Spieler hinzuzufügen.");
         }
-    };
+    } else {
+        _user.sendPrivateMessage("Diesem RPG kann man nicht beitreten. Bitte benutze /addPlayer ID:NICK um Spieler hinzuzufügen.");
+    }
+};
 
-    this.getTheme = function () {
-        return theme;
-    };
-
-    this.setDesc = function (_user, _desc) {
-        if (isAllowed(_user)) {
-            _user.sendPrivateMessage(STRINGS.rpg_desc_changed(_desc));
-            desc = _desc;
-            save();
-        } else {
-            _user.sendPrivateMessage(STRINGS.rpg_desc_notAllowed);
+RPG.addPlayer = function (_rpg, _user, _player) {
+    var silent = !RPG.isHost(_rpg, _user);
+    if (RPG.tryAddPlayer(_rpg, _user, _player)) {
+        if (_rpg.running) {
+            Players.rpgStart(_player, _rpg.id);
         }
-    };
+        if (!silent) {
+            _player.sendPrivateMessage(STRINGS.rpg_added_you(_user, RPG.getName(_rpg)));
+        }
+        _user.sendPrivateMessage(STRINGS.rpg_added_user_confirmation(_player));
+    } else {
+        _user.sendPrivateMessage(_player.getNick() + " ist doch schon im Spiel.");
+    }
+};
 
-    this.getDesc = function () {
-        return desc;
-    };
+RPG.changeHost = function (_rpg, _user, _newHost) {
+    var uid = _newHost.getUserId();
+    var nick = _newHost.getNick();
+    if (RPG.isPlaying(_rpg, uid)) {
+        _rpg.host = _newHost;
+        RPG.save(_rpg);
+        _rpg.host.sendPrivateMessage(STRINGS.rpg_newHost(_user, RPG.getName(_rpg)) + STRINGS.rpgs_host(_rpg));
+        RPG.sendPlayers(_rpg, STRINGS.rpg_newHost_players(nick, _user, RPG.getName(_rpg)), false);
+    } else {
+        _user.sendPrivateMessage(STRINGS.rpg_newHost_mustBePlayer(nick));
+    }
+};
 
-    this.getPlayers = function () {
-        return players;
-    };
+RPG.create = function (_user, _host, _id) {
+    var rpg = new RPG(_host, _id);
+    Players.rpgStart(_host, _id);
+    RPGS.addRPG(rpg);
+    RPG.save(rpg);
+    _user.sendPrivateMessage(STRINGS.rpgs_created(_id, _host));
+    _host.sendPrivateMessage(STRINGS.rpgs_start(_user) + STRINGS.rpgs_host(rpg));
+    RPGMode.startRPGMode(false);
+};
 
-    this.getInfos = function () {
-        var _name = name == "" ? STRINGS.rpg_info_noName : name;
-        var _theme = theme == "" ? STRINGS.rpg_info_noTheme : theme;
-        var _desc = desc == "" ? STRINGS.rpg_info_noDesc : desc;
-        var _players = "";
-        var msec = Date.now() - start;
-        var hh = Math.floor(msec / 1000 / 60 / 60);
-        msec -= hh * 1000 * 60 * 60;
-        var mm = Math.floor(msec / 1000 / 60);
-        msec -= mm * 1000 * 60;
-        var ss = Math.floor(msec / 1000);
-        msec -= ss * 1000;
-        var time = (hh < 10 ? "0" + hh : hh) + ":" + (mm < 10 ? "0" + mm : mm) + ":" + (ss < 10 ? "0" + ss : ss) + "." + msec;
-        players.forEach(function (player) {
-            if (_players != "") {
-                _players += ", ";
-            }
-            var user = Users.get(Bot.get(), player);
-            if (isHost(user)) {
-                _players += "_" + user.getProfileLink() + "_" + STRINGS.rpg_info_host;
+RPG.declinePlayer = function (_rpg, _user, _player) {
+    var uid = _player.getUserId();
+    var nick = _player.getNick();
+    if (!RPG.isPlaying(_rpg, uid)) {
+        if (_rpg.open) {
+            if (_rpg.declined.indexOf(uid) == -1) {
+                _rpg.declined.push(uid);
+                RPG.save(_rpg);
+                _user.sendPrivateMessage(STRINGS.rpg_declined_user(nick, _rpg.id));
+                _player.sendPrivateMessage(STRINGS.rpg_declined(_user));
             } else {
-                _players += user.getProfileLink();
+                _user.sendPrivateMessage("Diesem RPG kann man nicht beitreten. Du brauchst also auch keine Leute ablehnen.");
             }
-        });
-        return STRINGS.rpg_info(id, _name, _theme, _desc, _players, time);
-    };
+        } else {
+            _rpg.host.sendPrivateMessage(STRINGS.rpg_decline_alreadyDeclined(nick));
+        }
+    } else {
+        _rpg.host.sendPrivateMessage(STRINGS.rpg_decline_alreadyPlaying(nick, _rpg.id));
+    }
+};
 
-    this.changeHost = function (_user, _nick) {
-        if (isAllowed(_user)) {
-            var user = Users.get(_user, _nick);
-            if (user) {
-                var nick = user.getNick();
-                if (self.isPlaying(nick)) {
-                    host = user;
-                    save();
-                    host.sendPrivateMessage(STRINGS.rpg_newHost(_user, getName()) + STRINGS.rpgs_host(self));
-                    sendPlayers(STRINGS.rpg_newHost_players(nick, _user, getName()), false);
+RPG.delete = function (_rpg, _user) {
+    RPG.sendPlayers(_rpg, STRINGS.rpg_end(_user), true);
+    Players.rpgEndAll(_rpg);
+    RPGS.removeRPG(_rpg);
+    if (RPGS.getRunning(false).length == 0) {
+        RPGMode.endRPGMode(false);
+    }
+};
+
+RPG.edit = function (_rpg, _user) {
+    _user.sendPrivateMessage(STRINGS.rpgs_host(_rpg));
+};
+
+RPG.end = function (_rpg, _user) {
+    if (_rpg.running) {
+        _rpg.time += Date.now() - _rpg.start;
+        RPG.sendPlayers(_rpg, "Das RPG wurde beendet.", true);
+        _rpg.running = false;
+        RPG.save(_rpg);
+        Players.rpgEndAll(_rpg);
+        if (RPGS.getRunning(false).length == 0) {
+            RPGMode.endRPGMode(false);
+        }
+    } else {
+        _user.sendPrivateMessage("Das RPG läuft momentan nicht.");
+    }
+};
+
+RPG.join = function (_rpg, _user) {
+    if (_rpg.open) {
+        if (_rpg.running) {
+            var uid = _user.getUserId();
+            if (!RPG.isPlaying(_rpg, uid)) {
+                if (_rpg.declined.indexOf(uid) == -1) {
+                    _rpg.host.sendPrivateMessage(STRINGS.rpg_join_question(_user.getNick(), _rpg.id));
+                    _user.sendPrivateMessage(STRINGS.rpg_join_ask(_rpg.host));
                 } else {
-                    _user.sendPrivateMessage(STRINGS.rpg_newHost_mustBePlayer(nick));
+                    _user.sendPrivateMessage(STRINGS.rpg_join_alreadyDeclined);
                 }
+            } else {
+                _user.sendPrivateMessage("Du spielst hier doch schon mit.");
             }
         } else {
-            _user.sendPrivateMessage(STRINGS.rpg_newHost_notAllowed);
+            _user.sendPrivateMessage("Dieses RPG läuft grade nicht.");
         }
-    };
+    } else {
+        _user.sendPrivateMessage("Diesem RPG kann man nicht beitreten.");
+    }
+};
 
-    this.addPlayer = function (_user, player) {
-        var silent = !isHost(_user);
-        if (isAllowed(_user)) {
-            if (addPlayer(player)) {
-                save();
-                if (!silent) {
-                    player.sendPrivateMessage(STRINGS.rpg_added_you(_user, getName()));
-                }
-                _user.sendPrivateMessage(STRINGS.rpg_added_user_confirmation(player));
-            }
+RPG.leave = function (_rpg, _user) {
+    var uid = _user.getUserId();
+    var index = _rpg.players.indexOf(uid);
+    if (index > -1) {
+        _rpg.players.splice(index, 1);
+        _user.sendPrivateMessage(STRINGS.rpg_leave);
+        if (_rpg.running) {
+            Players.rpgEnd(_user, _rpg.id);
+        }
+        if (_rpg.players.length == 0) {
+            RPGS.removeRPG(_rpg);
         } else {
-            _user.sendPrivateMessage(STRINGS.rpg_addPlayer_notAllowed);
-        }
-    };
-
-    this.join = function (_user) {
-        var nick = _user.getNick();
-        if (declined.indexOf(nick) == -1) {
-            host.sendPrivateMessage(STRINGS.rpg_join_question(nick, id));
-            _user.sendPrivateMessage(STRINGS.rpg_join_ask(host));
-        } else {
-            _user.sendPrivateMessage(STRINGS.rpg_join_alreadyDeclined);
-        }
-    };
-
-    this.acceptPlayer = function (_user, _player) {
-        if (isHost(_user)) {
-            if (addPlayer(_player)) {
-                save();
-                _player.sendPrivateMessage(STRINGS.rpg_join_accepted(host));
-                host.sendPrivateMessage(STRINGS.rpg_join_userAccepted(_player));
-            }
-        }
-    };
-
-    this.declinePlayer = function (_user, _player) {
-        if (isHost(_user)) {
-            var player = Users.get(host, _player);
-            var nick = player.getNick();
-            if (player) {
-                if (self.isPlaying(nick)) {
-                    host.sendPrivateMessage(STRINGS.rpg_decline_alreadyPlaying(nick, id));
+            if (RPG.isHost(_rpg, _user)) {
+                var nick = _user.getNick();
+                if (index < _rpg.players.length) {
+                    _rpg.host = Users.getByUid(_user, _rpg.players[index]);
                 } else {
-                    if (declined.indexOf(nick) == -1) {
-                        declined.push(nick);
-                        host.sendPrivateMessage(STRINGS.rpg_declined_user(nick, id));
-                        player.sendPrivateMessage(STRINGS.rpg_declined(host));
-                    } else {
-                        host.sendPrivateMessage(STRINGS.rpg_decline_alreadyDeclined(nick));
-                    }
+                    _rpg.host = Users.getByUid(_user, _rpg.players[0]);
                 }
+                _rpg.host.sendPrivateMessage(STRINGS.rpg_leave_userLeft(nick) + STRINGS.rpgs_host(_rpg));
+                RPG.sendPlayers(_rpg, STRINGS.rpg_leave_newHost(nick, _rpg.host), false);
+            } else {
+                RPG.sendPlayers(_rpg, STRINGS.rpg_leave_userLeft(nick), true);
             }
+            RPG.save(_rpg);
         }
-    };
+    } else {
+        _user.sendPrivateMessage(STRINGS.rpg_leave_notPlaying);
+    }
+};
 
-    this.leave = function (_user) {
-        var nick = _user.getNick();
-        var index = players.indexOf(nick);
+RPG.removePlayer = function (_rpg, _user, _player) {
+    var silent = !RPG.isHost(_rpg, _user);
+    if (_player.getNick() == _user.getNick()) {
+        _user.sendPrivateMessage(STRINGS.rpg_removePlayer_leave(_rpg.id));
+    } else {
+        var uid = _player.getUserId();
+        var index = _rpg.players.indexOf(uid);
         if (index > -1) {
-            players.splice(index, 1);
-            _user.sendPrivateMessage(STRINGS.rpg_leave);
-            if (players.length == 0) {
-                RPGS.isEmpty(id);
-            } else {
-                if (isHost(_user)) {
-                    host = Users.get(Bot.get(), players[0]);
-                    host.sendPrivateMessage(STRINGS.rpg_leave_userLeft(nick) + STRINGS.rpgs_host(self));
-                    sendPlayers(STRINGS.rpg_leave_newHost(nick, host), false);
+            _rpg.players.splice(index, 1);
+            _rpg.declined.push(uid);
+            if (_rpg.running) {
+                Players.rpgEnd(_user, _rpg.id);
+            }
+            if (_rpg.players.length == 0) {
+                RPGS.removeRPG(_rpg);
+            } else if (RPG.isHost(_rpg, _player)) {
+                var nick = _player.getNick();
+                if (index < _rpg.players.length) {
+                    _rpg.host = Users.getByUid(_user, _rpg.players[index]);
                 } else {
-                    sendPlayers(STRINGS.rpg_leave_userLeft(nick), true);
+                    _rpg.host = Users.getByUid(_user, _rpg.players[0]);
                 }
-                save();
+                _rpg.host.sendPrivateMessage(STRINGS.rpg_leave_userLeft(nick) + STRINGS.rpgs_host(_rpg));
+                RPG.sendPlayers(_rpg, STRINGS.rpg_leave_newHost(nick, _rpg.host), false);
             }
-        } else {
-            _user.sendPrivateMessage(STRINGS.rpg_leave_notPlaying);
-        }
-    };
-
-    this.removePlayer = function (_user, _player) {
-        var silent = !isHost(_user);
-        if (isAllowed(_user)) {
-            var player = Users.get(host, _player);
-            if (player) {
-                if (player.getNick() == _user.getNick()) {
-                    _user.sendPlayers(STRINGS.rpg_removePlayer_leave(id));
-                } else if (removePlayer(player)) {
-                    save();
-                    if (!silent) {
-                        player.sendPrivateMessage(STRINGS.rpg_removePlayer_removedYou(_user, getName()));
-                    }
-                    _user.sendPrivateMessage(STRINGS.rpg_removePlayer_removed(player));
-                } else {
-                    _user.sendPrivateMessage(STRINGS.rpg_removePlayer_notPlaying(player));
-                }
+            RPG.save(_rpg);
+            if (!silent) {
+                _player.sendPrivateMessage(STRINGS.rpg_removePlayer_removedYou(_user, RPG.getName(_rpg)));
             }
-        } else {
-            _user.sendPrivateMessage(STRINGS.rpg_removePlayer_notAllowed);
+            _user.sendPrivateMessage(STRINGS.rpg_removePlayer_removed(_player));
         }
-    };
-
-    this.getHostInfos = function(_user) {
-        if (isHost(_user)) {
-            _user.sendPrivateMessage(STRINGS.rpgs_host(self));
-        } else {
-            STRINGS.command_notAllowed;
-        }
-    };
-
-    this.delete = function (_user) {
-        if (isAllowed(_user)) {
-            players.forEach(function (nick) {
-                var player = Users.get(_user, nick);
-                player.sendPrivateMessage(STRINGS.rpg_end(_user));
-            });
-            DB.delStr(Keys.RPG + id);
-            return true;
-        } else {
-            _user.sendPrivateMessage(STRINGS.rpg_end_notAllowed);
-        }
-    };
-
-    this.isPlaying = function (_nick) {
-        return players.indexOf(_nick) > -1;
-    };
-
-    this.toString = function () {
-        var out = name;
-        if (name == "") {
-            out = id;
-        }
-        if (theme != "") {
-            out += " (" + theme + ")";
-        }
-        out += " - ";
-        var count = 0;
-        players.forEach(function (player) {
-            if (count > 0) {
-                out += ", ";
-            }
-            var user = Users.get(Bot.get(), player);
-            if (isHost(user)) {
-                out += "_" + user.getProfileLink() + "_" + STRINGS.rpg_info_host;
-            } else {
-                out += user.getProfileLink();
-            }
-            count++;
-        });
-        out += " - Channel " + RS.name + " °>[Ansehen]|/go +" + channel + "<°";
-        return out;
-    };
-
-    function getName() {
-        if (name == "") {
-            return id;
-        } else {
-            return name + "(" + id + ")";
+        else {
+            _user.sendPrivateMessage(STRINGS.rpg_removePlayer_notPlaying(_player));
         }
     }
+};
 
-    function addPlayer(_player) {
-        var nick = _player.getNick();
-        if (players.indexOf(nick) == -1) {
-            players.push(nick);
-            var index = declined.indexOf(nick);
-            if (index > -1) {
-                declined.splice(index, 1);
-            }
-            return true;
-        } else {
-            return false;
-        }
+RPG.setDesc = function (_rpg, _user, _desc) {
+    _user.sendPrivateMessage(STRINGS.rpg_desc_changed(_desc));
+    _rpg.desc = _desc;
+    RPG.save(_rpg);
+};
+
+RPG.setName = function (_rpg, _user, _name) {
+    RPG.sendPlayers(_rpg, STRINGS.rpg_name_changed(_user, RPG.getName(_rpg), _name), true);
+    _rpg.name = _name;
+    RPG.save(_rpg);
+};
+
+RPG.setTheme = function (_rpg, _user, _theme) {
+    if (_rpg.theme != "") {
+        RPG.sendPlayers(_rpg, STRINGS.rpg_theme_changed(_user, RPG.getName(_rpg), _rpg.theme, _theme), true);
+    } else {
+        RPG.sendPlayers(_rpg, STRINGS.rpg_theme_set(_user, RPG.getName(_rpg), _theme), true);
     }
+    _rpg.theme = _theme;
+    RPG.save(_rpg);
+};
 
-    function removePlayer(_user) {
-        var nick = _user.getNick();
-        var index = players.indexOf(nick);
-        if (index > -1) {
-            players.splice(index, 1);
-            declined.push(nick);
-            if (players.length == 0) {
-                RPGS.isEmpty(id);
-            } else if (isHost(_user)) {
-                host = Users.get(_user, players[0]);
-                host.sendPrivateMessage(STRINGS.rpg_leave_userLeft(nick) + STRINGS.rpgs_host(self));
-                sendPlayers(STRINGS.rpg_leave_newHost(nick, host), false);
-            }
-            return true;
+RPG.showRPG = function (_rpg) {
+    var _name = _rpg.name == "" ? STRINGS.rpg_info_noName : _rpg.name;
+    var _theme = _rpg.theme == "" ? STRINGS.rpg_info_noTheme : _rpg.theme;
+    var _desc = _rpg.desc == "" ? STRINGS.rpg_info_noDesc : _rpg.desc;
+    var _players = "";
+    _rpg.players.forEach(function (player) {
+        if (_players != "") {
+            _players += ", ";
         }
+        var user = Users.getByUid(Bot.get(), player);
+        if (RPG.isHost(_rpg, user)) {
+            _players += "_" + user.getProfileLink() + "_" + STRINGS.rpg_info_host;
+        } else {
+            _players += user.getProfileLink();
+        }
+    });
+    var sessionTime = _rpg.running ? Date.now() - _rpg.start : 0;
+    var gameTime = _rpg.time + sessionTime;
+    return STRINGS.rpg_info(_rpg.id, _name, _theme, _desc, _players, RPG.getTime(sessionTime), RPG.getTime(gameTime));
+};
+
+RPG.start = function (_rpg, _user) {
+    if (!_rpg.running) {
+        _rpg.start = Date.now();
+        RPG.sendPlayers(_rpg, "Das RPG wurde gestartet.", true);
+        _rpg.running = true;
+        RPG.save(_rpg);
+        Players.rpgStartAll(_rpg);
+        RPGMode.startRPGMode(false);
+    } else {
+        _user.sendPrivateMessage("Das RPG läuft bereits.");
+    }
+};
+
+// METHODS
+
+RPG.getName = function (_rpg) {
+    if (_rpg.name == "") {
+        return _rpg.id;
+    } else {
+        return _rpg.name;
+    }
+};
+
+RPG.isAllowed = function (_rpg, _user, _hideMessage) {
+    var allowed = _user.isAppDeveloper() || Bot.isBot(_user) || RPG.isHost(_rpg, _user);
+    if (!allowed && !_hideMessage) {
+        _user.sendPrivateMessage(STRINGS.command_notAllowed);
+    }
+    return allowed;
+};
+
+RPG.isHost = function (_rpg, _user) {
+    return _rpg.host.getNick() == _user.getNick();
+};
+
+RPG.isPlaying = function (_rpg, _uid) {
+    return _rpg.players.indexOf(_uid) > -1;
+};
+
+RPG.save = function (_rpg) {
+    DB.saveObj(Keys.RPG + _rpg.id, _rpg);
+};
+
+RPG.sendPlayers = function (_rpg, _msg, _sendHost) {
+    _rpg.players.forEach(function (_uid) {
+        if (_sendHost || _uid != _rpg.host.getUserId()) {
+            Users.getByUid(Bot.get(), _uid).sendPrivateMessage(_msg);
+        }
+    });
+};
+
+RPG.getTime = function (_time) {
+    var msec = _time;
+    var hh = Math.floor(msec / 1000 / 60 / 60);
+    msec -= hh * 1000 * 60 * 60;
+    if (hh < 10) {
+        hh = "0" + hh;
+    }
+    var mm = Math.floor(msec / 1000 / 60);
+    msec -= mm * 1000 * 60;
+    if (mm < 10) {
+        mm = "0" + mm;
+    }
+    var ss = Math.floor(msec / 1000);
+    msec -= ss * 1000;
+    if (ss < 10) {
+        ss = "0" + ss;
+    }
+    if (msec < 10) {
+        msec = "00" + msec;
+    } else if (msec < 100) {
+        msec = "0" + msec;
+    }
+    return hh + ":" + mm + ":" + ss;// + "." + msec;
+};
+
+RPG.tryAddPlayer = function (_rpg, _host, _player) {
+    var uid = _player.getUserId();
+    if (_rpg.players.indexOf(uid) == -1) {
+        _rpg.players.push(uid);
+        var index = _rpg.declined.indexOf(uid);
+        if (index > -1) {
+            _rpg.declined.splice(index, 1);
+        }
+        RPG.save(_rpg);
+        return true;
+    } else {
         return false;
     }
+};
 
-    function isAllowed(_user) {
-        return _user.isAppDeveloper() || Bot.isBot(_user) || isHost(_user);
+RPG.toString = function (_rpg, _user) {
+    var out = _rpg.running ? '' : '"';
+    out += _rpg.id;
+    if (_rpg.name != "") {
+        out += " - " + _rpg.name;
     }
-
-    function isHost(_user) {
-        return host.getNick() == _user.getNick();
+    if (_rpg.theme != "") {
+        out += " (" + _rpg.theme + ")";
     }
-
-    function save() {
-        DB.saveStr(Keys.RPG + id, self.toString());
+    out += " - ";
+    var count = 0;
+    _rpg.players.forEach(function (player) {
+        if (count > 0) {
+            out += ", ";
+        }
+        var user = Users.getByUid(Bot.get(), player);
+        if (RPG.isHost(_rpg, user)) {
+            out += "_" + user.getProfileLink() + "_" + STRINGS.rpg_info_host;
+        } else {
+            out += user.getProfileLink();
+        }
+        count++;
+    });
+    out += " - °>[Mehr]|/showrpg " + _rpg.id + "<°";
+    if (_rpg.channel != Channel.getName()) {
+        out += " - Channel " + _rpg.channel + " °>[Ansehen]|/go +" + _rpg.channel + "<°";
+    } else if (RPG.isHost(_rpg, _user)) {
+        out += " - °>[Bearbeiten]|/editRPG " + _rpg.id + "<°";
+        if (!_rpg.running) {
+            out += " - °>[Starten]|/start " + _rpg.id + "<°";
+        } else {
+            out += " - °>[Beenden]|/end " + _rpg.id + "<°";
+        }
     }
-
-    function sendPlayers(_msg, _sendHost) {
-        players.forEach(function (player) {
-            if (_sendHost || player != host.getNick()) {
-                Users.get(Bot.get(), player).sendPrivateMessage(_msg);
-            }
-        });
+    if (!_rpg.running) {
+        out += '"';
     }
-}
+    return out;
+};

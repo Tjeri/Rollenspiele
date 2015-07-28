@@ -33,10 +33,6 @@
         return _db.hasNumber(key);
     };
 
-    this.hasObj = function (key) {
-        return _db.hasObject(key);
-    };
-
     this.hasStr = function (key) {
         return _db.hasString(key);
     };
@@ -55,6 +51,11 @@
 }());
 
 var UserDB = (new function () {
+
+    this.addNum = function (user, key, value) {
+        return user.getPersistence().addNumber(key, value);
+    };
+
     this.delNum = function (user, key) {
         return user.getPersistence().deleteNumber(key);
     };
@@ -64,7 +65,7 @@ var UserDB = (new function () {
     };
 
     this.delStr = function (user, key) {
-        return user.getPersistence().deleteObject(key);
+        return user.getPersistence().deleteString(key);
     };
 
     this.getNum = function (user, key, defaultValue) {
@@ -81,10 +82,6 @@ var UserDB = (new function () {
 
     this.hasNum = function (user, key) {
         return user.getPersistence().hasNumber(key);
-    };
-
-    this.hasObj = function (user, key) {
-        return user.getPersistence().hasObject(key);
     };
 
     this.hasStr = function (user, key) {

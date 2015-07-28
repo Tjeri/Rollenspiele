@@ -9,7 +9,7 @@
 
     this.getOnlineCMs = function () {
         var cms = [];
-        Channel.getUsers(UserType.Human).forEach(function(user) {
+        Channel.getUsers(UserType.Human).forEach(function (user) {
             if (user.isChannelModerator()) {
                 cms.push(user);
             }
@@ -23,6 +23,15 @@
 
     this.getEMs = function () {
         return _rights.getEventModerators();
+    };
+
+    this.getMainName = function () {
+        var chan = Channel.getName();
+        if (!KnuddelsServer.getAppAccess().getOwnInstance().isRootInstance()) {
+            var index = chan.lastIndexOf(" ");
+            chan = chan.substr(0, index).trim();
+        }
+        return chan;
     };
 
     this.getName = function () {
