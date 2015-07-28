@@ -1,0 +1,30 @@
+html {
+    cursor: pointer;
+}
+
+body {
+    height: inherit;
+    background: rgba(0, 0, 0, 0) url('../assets/bg_long_180.png');
+    color: white !important;
+    overflow: hidden;
+    font-family: Arial, fantasy;
+    font-size: 14px;
+    text-align: center;
+}
+
+a {
+    color: white;
+}
+
+#divContent {
+    cursor: pointer;
+}
+
+#linkRPGList {
+    font-weight: bold;
+    border-bottom: solid 1px;
+}
+
+body:hover #linkRPGList {
+    color: #BBBBBB;
+}

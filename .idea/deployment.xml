@@ -5,7 +5,7 @@
       <paths name="KnuddelsDev">
         <serverdata>
           <mappings>
-            <mapping deploy="/ftp/Rollenspiele" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/Rollenspiele" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
