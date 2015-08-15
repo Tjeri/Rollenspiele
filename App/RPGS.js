@@ -41,19 +41,20 @@ var RPGS = (new function ()
 
 	this.getPageData = function (_user, _currentRpg)
 	{
-		var rpgs = RPGS.getAllRPGs();
+		var allRPGs = RPGS.getAllRPGs();
+		var shortRPGs = [];
 
-		var n = rpgs.length;
+		var n = allRPGs.length;
 		do {
 			var newN = 0;
 			for (var i = 1; i < n; ++i)
 			{
 				var j = i - 1;
-				if (rpgs[j].lastPlayed < rpgs[i].lastPlayed)
+				if (allRPGs[j].lastPlayed < allRPGs[i].lastPlayed)
 				{
-					var rpg = rpgs[j];
-					rpgs[j] = rpgs[i];
-					rpgs[i] = rpg;
+					var rpg = allRPGs[j];
+					allRPGs[j] = allRPGs[i];
+					allRPGs[i] = rpg;
 					newN = i;
 				}
 			}
@@ -63,9 +64,13 @@ var RPGS = (new function ()
 
 		var currentRpg = _currentRpg ? _currentRpg : null;
 
+		allRPGs.forEach(function (rpg) {
+			shortRPGs.push(encodeRPG(rpg));
+		});
+
 		return {
 			uid: _user.getUserId(),
-			rpgs: rpgs,
+			rpgs: shortRPGs,
 			channel: Channel.getName(),
 			isAllowed: Allowance.isAllowed(_user, true),
 			isMod: Mods.isMod(_user, true),

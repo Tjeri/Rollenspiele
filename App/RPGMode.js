@@ -85,7 +85,10 @@ var RPGMode = (new function ()
 			DB.addNum(Keys.TIME_CHANNEL + Channel.getName(), Date.now() - startTime);
 			RPGMode.startRPGMode(true);
 		}
-		HtmlHandler.sendAllRPGHint();
+		if (Config.moduleHtml())
+		{
+			HtmlHandler.sendAllRPGHint();
+		}
 	};
 
 	this.userJoined = function (_user)

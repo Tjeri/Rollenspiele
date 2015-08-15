@@ -7,4 +7,5 @@ require("Core/Users.js");
 require("Core/Instance.js");
 require("Core/Keys.js");
 require("Core/Log.js");
+require("www/js/Mapping.js");
 require("Core/String Manager.js");
