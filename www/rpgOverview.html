@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<script type="text/javascript" src="/apps/api/knuddels-api.js"></script>
+	<script>
+		Client.includeCSS('/apps/api/bootstrap3.3.4/css/bootstrap.min.css');
+		Client.includeCSS('/apps/api/bootstrap3.3.4/css/bootstrap-theme.min.css');
+		Client.includeCSS('css/rpgOverview.css');
+		Client.includeJS('/apps/api/jquery.min.js');
+		Client.includeJS('/apps/api/bootstrap3.3.4/js/bootstrap.min.js');
+		Client.includeJS('/apps/api/mustache-2.0.0.min.js');
+		Client.includeJS('js/Mapping.js');
+		Client.includeJS('js/rpgOverview.js');
+	</script>
+	<title>RPG bearbeiten</title>
+</head>
+<body>
+<div class="modal fade" id="messageModal" tabindex="-1" role="dialog" aria-hidden="true">
+	<div class="modal-dialog modal-sm">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+						aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title" id="captionMessageModal"></h4>
+			</div>
+			<div class="modal-body">
+				<span class="centerTextHorizontal" id="textMessageModal"></span>
+			</div>
+		</div>
+	</div>
+</div>
+<div id="inputModal" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+	<div class="modal-dialog modal-sm">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+				<h4 class="modal-title" id="captionInputModal"></h4>
+			</div>
+			<div class="modal-body">
+				<div class="form-group">
+					<label id="labelInputModal" for="textInputModal"></label>
+					<input type="text" class="form-control" id="textInputModal" maxLength="100" autofocus />
+				</div>
+				<div class="containerButtons">
+					<button class="floatLeft btn btn-success btn48Percent" data-dismiss="modal" id="buttonInputModal"></button>
+					<button class="floatRight btn btn-default btn48Percent" data-dismiss="modal">Abbrechen</button>
+				</div>
+				<div class="clear"></div>
+			</div>
+		</div>
+	</div>
+</div>
+<div id="listModal" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+	<div class="modal-dialog modal-sm">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+				<h4 class="modal-title" id="captionListModal"></h4>
+			</div>
+			<div class="modal-body">
+				<div class="form-group">
+					<label id="labelListModal" for="selectListModal"></label>
+					<ol id="selectListModal"></ol>
+				</div>
+				<div class="containerButtons">
+					<button class="floatRight btn btn-default btn48Percent" data-dismiss="modal">Abbrechen</button>
+				</div>
+				<div class="clear"></div>
+			</div>
+		</div>
+	</div>
+</div>
+<div id="textareaModal" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+				<h4 class="modal-title" id="captionTextareaModal"></h4>
+			</div>
+			<div class="modal-body">
+				<div class="form-group">
+					<label id="labelTextareaModal" for="textTextareaModal"></label>
+					<textarea id="textTextareaModal" rows="4" autofocus></textarea>
+				</div>
+				<div class="containerButtons">
+					<button class="floatLeft btn btn-success btn48Percent" data-dismiss="modal" id="buttonTextareaModal"></button>
+					<button class="floatRight btn btn-default btn48Percent" data-dismiss="modal">Abbrechen</button>
+				</div>
+				<div class="clear"></div>
+			</div>
+		</div>
+	</div>
+</div>
+<div id="themeModal" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+	<div class="modal-dialog modal-sm">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+				<h4 class="modal-title">Thema ändern</h4>
+			</div>
+			<div class="modal-body">
+				<div class="form-group">
+					<label for="select1ThemeModal">Thema:</label>
+					<br />
+					<select id="select1ThemeModal" class="themeSelect" size="4">
+						<option selected></option>
+						<option value="AZ">AltZeit</option>
+						<option value="NZ">NeuZeit</option>
+						<option value="EZ">EndZeit</option>
+					</select>
+					<select id="select2ThemeModal" class="themeSelect" size="5">
+						<option selected></option>
+						<option value="Fantasy">Fantasy</option>
+						<option value="Anime">Anime</option>
+						<option value="SciFi">Science Fiction</option>
+						<option value="RL">Real Life</option>
+					</select>
+				</div>
+				<div class="containerButtons">
+					<button class="floatLeft btn btn-success btn48Percent" data-dismiss="modal" id="buttonThemeModal">Ändern</button>
+					<button class="floatRight btn btn-default btn48Percent" data-dismiss="modal">Abbrechen</button>
+				</div>
+				<div class="clear"></div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="containerRPGOverview">
+	<div class="containerHeaderFixed">
+		<div class="containerHeaderCaption">
+			<span class="textHeader boldText floatLeft">RPG Übersicht</span>
+
+			<div class="floatRight">
+				<img class="imgUpdate" id="buttonRefreshRPGOverview" src="assets/ic_cached_white_24dp_2x.png" />
+			</div>
+		</div>
+		<div class="clear"></div>
+		<ul class="nav nav-tabs nav-justified">
+			<li role="presentation" id="selectorRunning" class="boldText cursorPointer"><a>Laufende RPGs</a></li>
+			<li role="presentation" id="selectorAll" class="boldText cursorPointer"><a>Alle RPGs</a></li>
+			<li role="presentation" id="selectorOwn" class="boldText cursorPointer"><a>Meine RPGs</a></li>
+		</ul>
+	</div>
+	<div id="containerRPGOverviewContent" class="containerContent">
+	</div>
+	<div class="containerFooter" id="footerRPGOverview">
+		<span class="textButton boldText" id="buttonCreateRPG"><a>RPG erstellen</a></span>
+	</div>
+</div>
+
+<div id="containerRPGDetails">
+	<div class="containerHeaderFixed">
+		<div class="containerHeaderCaption">
+			<div class="cursorPointer floatLeft" id="containerBackRPGDetails">
+				<img class="imgHeader" src="assets/ic_arrow_back_white_36dp_1x.png" />
+				<span class="textHeader boldText">RPG Details</span>
+			</div>
+			<div class="floatRight">
+				<div id="statusBackground" class="inlineBlock">
+					<div id="statusDetails" class="inlineBlock"></div>
+				</div>
+				<img class="imgUpdate inlineBlock" id="buttonRefreshRPGDetails" src="assets/ic_cached_white_24dp_2x.png" />
+			</div>
+		</div>
+		<div class="clear"></div>
+		<ul class="nav nav-tabs nav-justified">
+			<li role="presentation" id="selectorDetails" class="boldText cursorPointer"><a>Spielinformationen</a></li>
+			<li role="presentation" id="selectorPlayers" class="boldText cursorPointer"><a>Spieler</a></li>
+		</ul>
+	</div>
+	<div id="containerMainContentRPGDetails" class="containerContent">
+	</div>
+	<div class="containerFooter" id="footerRPGDetails">
+            <span class="textButton boldText" id="linkToggleRunning">
+                <a id="linkToggleRunningText"></a>
+            </span>
+		<span id="pipeHost"> | </span>
+            <span class="textButton boldText" id="linkChangeHost">
+                <a>Spielleiter wechseln</a>
+            </span>
+		<span id="pipePlayer"> | </span>
+            <span class="textButton boldText" id="linkLeave">
+                <a>RPG verlassen</a>
+            </span>
+	</div>
+</div>
+
+
+<script id="templateContentRPGOverview" type="x-tmpl-mustache">
+<table class="table customTable">
+	<thead>
+	<tr class="_row">
+		<th class="_entry borderRight rowId">
+			<span class="boldText">ID</span>
+		</th>
+		<th class="_entry borderRight rowState">
+			<span class="boldText">Status</span>
+		</th>
+		<th class="_entry borderRight rowName">
+			<span class="boldText">Name</span>
+		</th>
+		<th class="_entry hidden-xs rowTheme">
+			<span class="boldText">Thema</span>
+		</th>
+	</tr>
+	</thead>
+	<tfoot>
+	<tr class="_row">
+		<th class="_entry borderRight rowId">
+			<span class="boldText">ID</span>
+		</th>
+		<th class="_entry borderRight rowState">
+			<span class="boldText">Status</span>
+		</th>
+		<th class="_entry borderRight rowName">
+			<span class="boldText">Name</span>
+		</th>
+		<th class="_entry hidden-xs rowTheme">
+			<span class="boldText">Thema</span>
+		</th>
+	</tr>
+	</tfoot>
+	<tbody>
+	{{#rpgs}}
+		<tr class="_row _rowRPG" rpgId="{{id}}">
+			<td class="_entry borderRight rowId">
+				<span>{{id}}</span>
+			</td>
+			<td class="_entry borderRight rowState">
+				<div class="{{dot}}"></div>
+			</td>
+			<td class="_entry borderRight rowName">
+				<span>{{getName}}</span>
+			</td>
+			<td class="_entry hidden-xs rowTheme">
+				<span >{{getTheme}}</span>
+			</td>
+		</tr>
+	{{/rpgs}}
+	</tbody>
+</table>
+{{^hasRPGs}}
+	<div class="containerEmptyList">{{textEmpty}}</div>
+{{/hasRPGs}}
+</script>
+
+<script id="templateDetailsRPGDetails" type="x-tmpl-mustache">
+<br />
+<br />
+<span class="boldText">ID: </span>
+<span>{{id}}</span>
+<br />
+<br />
+<span class="boldText">Name: </span>
+<span>{{name}}</span>
+<a class="boldText cursorPointer" id="linkEditName">[Bearbeiten]</a>
+<br />
+<br />
+<span class="boldText">Thema: </span>
+<span>{{theme}}</span>
+<a class="boldText cursorPointer" id="linkEditTheme">[Bearbeiten]</a>
+<br />
+<br />
+<span class="boldText">Beschreibung: </span>
+<a class="boldText cursorPointer" id="linkEditDesc">[Bearbeiten]</a>
+<br />
+<pre>{{desc}}</pre>
+</script>
+
+<script id="templatePlayersRPGDetails" type="x-tmpl-mustache">
+<br />
+<br />
+{{#players}}
+	<img src="/kimg/layout/bullet2.png" />
+	<a nick="{{nick}}" class="textButton nickLink boldText">{{nick}}</a>
+	{{#isHost}}
+		<span>(Spielleiter)</span>
+	{{/isHost}}
+	{{#self}}
+		<a uid="{{uid}}" class="textButton leaveRPG">(verlassen)</a>
+	{{/self}}
+	{{^self}}
+		{{#canManage}}
+			<a uid="{{uid}}" class="textButton removePlayer">(entfernen)</a>
+		{{/canManage}}
+	{{/self}}
+	<br />
+{{/players}}
+{{#canManage}}
+	<a class="textButton boldText" id="addPlayer">(+ hinzufügen)</a>
+{{/canManage}}
+</script>
+</body>
+</html>
