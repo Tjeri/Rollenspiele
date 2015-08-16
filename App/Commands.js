@@ -518,7 +518,7 @@ var Commands = (new function ()
 
 	this.topChannel = function (_user)
 	{
-		var out = "Liste der Channel sortiert nach Spielzeit:";
+		var out = "°#°Liste der Channel sortiert nach Spielzeit:";
 
 		var chans = [];
 		var times = [];
@@ -549,7 +549,7 @@ var Commands = (new function ()
 			for (var j = 1; j < n; ++j)
 			{
 				var k = j - 1;
-				if (times[k] > times[j])
+				if (times[k] < times[j])
 				{
 					var time = times[k];
 					times[k] = times[j];

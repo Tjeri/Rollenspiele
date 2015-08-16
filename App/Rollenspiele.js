@@ -242,6 +242,9 @@ var RS = (new function ()
 
 	this.onUserJoined = function (_user)
 	{
+		if (Config.moduleRPGMode()) {
+			RPGMode.userJoined(_user);
+		}
 		if (Config.moduleHtml())
 		{
 			HtmlHandler.sendRPGHint(_user);

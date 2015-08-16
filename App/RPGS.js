@@ -1,10 +1,24 @@
 var RPGS = (new function ()
 {
+	this.getRPG = function (_id)
+	{
+		return DB.getObj(Keys.RPG + _id, null);
+	};
+
 	this.addRPG = function (_rpg)
 	{
 		var rpgs = RPGS.getAllIDs();
 		rpgs.push(_rpg.id);
 		DB.saveObj(Keys.RPGS_ALL, rpgs);
+	};
+
+	this.removeRPG = function (_rpg)
+	{
+		var rpgs = RPGS.getAllIDs();
+		var index = rpgs.indexOf(_rpg.id);
+		rpgs.splice(index, 1);
+		DB.saveObj(Keys.RPGS_ALL, rpgs);
+		DB.delObj(Keys.RPG + _rpg.id);
 	};
 
 	this.getAllIDs = function ()
@@ -19,6 +33,21 @@ var RPGS = (new function ()
 		rpgs.forEach(function (id)
 		{
 			result.push(RPGS.getRPG(id));
+		});
+		return result;
+	};
+
+	this.getRunning = function (_allChans)
+	{
+		var rpgs = RPGS.getAllIDs();
+		var result = [];
+		rpgs.forEach(function (id)
+		{
+			var rpg = RPGS.getRPG(id);
+			if (rpg.running && (_allChans || rpg.channel == Channel.getName()))
+			{
+				result.push(rpg);
+			}
 		});
 		return result;
 	};
@@ -39,86 +68,40 @@ var RPGS = (new function ()
 		return result;
 	};
 
-	this.getPageData = function (_user, _currentRpg)
+	this.getPageData = function (_user, _forceSwitch, _openPage, _openRPG)
 	{
-		var allRPGs = RPGS.getAllRPGs();
-		var shortRPGs = [];
-
-		var n = allRPGs.length;
-		do {
-			var newN = 0;
-			for (var i = 1; i < n; ++i)
-			{
-				var j = i - 1;
-				if (allRPGs[j].lastPlayed < allRPGs[i].lastPlayed)
-				{
-					var rpg = allRPGs[j];
-					allRPGs[j] = allRPGs[i];
-					allRPGs[i] = rpg;
-					newN = i;
-				}
-			}
-			n = newN;
-		}
-		while (n > 0);
-
-		var currentRpg = _currentRpg ? _currentRpg : null;
-
-		allRPGs.forEach(function (rpg) {
-			shortRPGs.push(encodeRPG(rpg));
-		});
-
 		return {
-			uid: _user.getUserId(),
-			rpgs: shortRPGs,
-			channel: Channel.getName(),
-			isAllowed: Allowance.isAllowed(_user, true),
-			isMod: Mods.isMod(_user, true),
-			isDev: Allowance.isDev(_user, true),
-			currentRPG: currentRpg
+			u: _user.getUserId(),
+			c: Channel.getName(),
+			ia: Allowance.isAllowed(_user, true),
+			im: Mods.isMod(_user, true),
+			id: Allowance.isDev(_user, true),
+			fs: _forceSwitch,
+			op: _openPage,
+			r: RPGS.getRPGsData(),
+			or: encodeRPG(_openRPG)
 		};
 	};
 
-	this.getRPG = function (_id)
-	{
-		return DB.getObj(Keys.RPG + _id, null);
-	};
+	this.getRPGsData = function () {
+		var allRPGs = RPGS.getAllRPGs();
+		var shortRPGs = [];
 
-	this.getRunning = function (allChans)
-	{
-		var rpgs = RPGS.getAllIDs();
-		var result = [];
-		rpgs.forEach(function (id)
-		{
-			var rpg = RPGS.getRPG(id);
-			if (rpg.running && (allChans || rpg.channel == Channel.getName()))
-			{
-				result.push(rpg);
-			}
+		allRPGs.sort(sorter);
+
+		allRPGs.forEach(function (rpg) {
+			shortRPGs.push(encodeRPG(rpg, true));
 		});
-		return result;
+
+		return shortRPGs;
 	};
 
-	this.removeRPG = function (_rpg)
+	function sorter(a, b)
 	{
-		var rpgs = RPGS.getAllIDs();
-		var index = rpgs.indexOf(_rpg.id);
-		rpgs.splice(index, 1);
-		DB.saveObj(Keys.RPGS_ALL, rpgs);
-		DB.delObj(Keys.RPG + _rpg.id);
-	};
+		return b.lastPlayed - a.lastPlayed;
+	}
 
 	this.update = function (_user)
 	{
-		RPGS.getAllRPGs().forEach(function (rpg)
-		{
-			rpg["hostUid"] = rpg.host.getUserId();
-			if (!rpg["lastPlayed"])
-			{
-				rpg["lastPlayed"] = rpg.time;
-			}
-			RPG.save(rpg);
-		});
-		_user.sendPrivateMessage(S.rpgs.update);
 	};
 }());

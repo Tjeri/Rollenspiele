@@ -10,7 +10,8 @@
 		Client.includeJS('/apps/api/jquery.min.js');
 		Client.includeJS('/apps/api/bootstrap3.3.4/js/bootstrap.min.js');
 		Client.includeJS('/apps/api/mustache-2.0.0.min.js');
-		Client.includeJS('js/Mapping.js');
+		Client.includeJS('core/Enums.js');
+		Client.includeJS('core/Mapping.js');
 		Client.includeJS('js/rpgOverview.js');
 	</script>
 	<title>RPG bearbeiten</title>
@@ -42,7 +43,7 @@
 			<div class="modal-body">
 				<div class="form-group">
 					<label id="labelInputModal" for="textInputModal"></label>
-					<input type="text" class="form-control" id="textInputModal" maxLength="100" autofocus />
+					<input type="text" class="form-control" id="textInputModal" maxlength="100" autofocus />
 				</div>
 				<div class="containerButtons">
 					<button class="floatLeft btn btn-success btn48Percent" data-dismiss="modal" id="buttonInputModal"></button>
@@ -146,9 +147,9 @@
 		</div>
 		<div class="clear"></div>
 		<ul class="nav nav-tabs nav-justified">
-			<li role="presentation" id="selectorRunning" class="boldText cursorPointer"><a>Laufende RPGs</a></li>
-			<li role="presentation" id="selectorAll" class="boldText cursorPointer"><a>Alle RPGs</a></li>
-			<li role="presentation" id="selectorOwn" class="boldText cursorPointer"><a>Meine RPGs</a></li>
+			<li role="presentation" id="selectorRunning" class="boldText cursorPointer"><a id="textRunning">Laufende RPGs</a></li>
+			<li role="presentation" id="selectorAll" class="boldText cursorPointer"><a id="textAll">Alle RPGs</a></li>
+			<li role="presentation" id="selectorOwn" class="boldText cursorPointer"><a id="textOwn">Deine RPGs</a></li>
 		</ul>
 	</div>
 	<div id="containerRPGOverviewContent" class="containerContent">
@@ -209,9 +210,14 @@
 		<th class="_entry borderRight rowName">
 			<span class="boldText">Name</span>
 		</th>
-		<th class="_entry hidden-xs rowTheme">
+		<th class="_entry borderRight hidden-xs rowTheme">
 			<span class="boldText">Thema</span>
 		</th>
+		{{#runningPage}}
+			<th class="_entry hidden-xs rowChannel">
+				<span class="boldText">Channel</span>
+			</th>
+		{{/runningPage}}
 	</tr>
 	</thead>
 	<tbody>
@@ -226,9 +232,14 @@
 			<td class="_entry borderRight rowName">
 				<span>{{getName}}</span>
 			</td>
-			<td class="_entry hidden-xs rowTheme">
+			<td class="_entry borderRight hidden-xs rowTheme">
 				<span >{{getTheme}}</span>
 			</td>
+			{{#runningPage}}
+				<td class="_entry hidden-xs rowChannel">
+					<span>{{channel}}</span>
+				</td>
+			{{/runningPage}}
 		</tr>
 	{{/rpgs}}
 	</tbody>
@@ -264,7 +275,7 @@
 	<a class="boldText cursorPointer" id="linkEditDesc">[Bearbeiten]</a>
 {{/canManage}}
 <br />
-<pre class="wrapper">{{desc}}</pre>
+<xmp class="wrapper">{{desc}}</xmp>
 </script>
 
 <script id="templatePlayersRPGDetails" type="x-tmpl-mustache">

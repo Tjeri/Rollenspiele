@@ -70,6 +70,15 @@ var RPGMode = (new function ()
 				{
 					return true;
 				}
+
+				if (_user.getClientType() == ClientType.Android && (start || end)) {
+					var time = UserDB.getNum(_user, Keys.MAY_SHOW_PM, 0);
+					if (Date.now() - time > Config.timeoutPublic()) {
+						UserDB.saveNum(_user, Keys.MAY_SHOW_PM, Date.now());
+						_user.sendPrivateMessage(S.rpgm.pub(start, end));
+						return true;
+					}
+				}
 				_user.sendPrivateMessage(S.rpgm.pub(start, end));
 				return false;
 			}
@@ -96,10 +105,6 @@ var RPGMode = (new function ()
 		if (rpgMode)
 		{
 			Bot.prv(_user, S.rpgm.join);
-			if (Config.moduleHtml())
-			{
-				HtmlHandler.sendRPGHint(_user);
-			}
 		}
 	};
 

@@ -2,6 +2,7 @@ var EventHandler = (new function ()
 {
 	this.onEventReceived = function (_user, _type, _data)
 	{
+		//Log.dev("EventRecv: " + _type + " - " + _user);
 		switch (_type)
 		{
 			case "addPlayer":
@@ -11,16 +12,19 @@ var EventHandler = (new function ()
 				changeHost(_user, _data.rpgId, parseInt(_data.uid));
 				break;
 			case "createRPG":
-				createRPG(_user, parseInt(_data.uid));
+				createRPG(_user, parseInt(_data));
 				break;
 			case "endRPG":
-				endRPG(_user, _data.rpgId);
+				endRPG(_user, _data);
+				break;
+			case "getRPG":
+				getRPG(_user, _data);
 				break;
 			case "getPlayers":
-				getPlayers(_user, _data.uids);
+				getPlayers(_user, _data);
 				break;
 			case "leaveRPG":
-				leaveRPG(_user, _data.rpgId);
+				leaveRPG(_user, _data);
 				break;
 			case "openRPGOverview":
 				openRPGWindow(_user);
@@ -38,34 +42,21 @@ var EventHandler = (new function ()
 				setTheme(_user, _data.rpgId, _data.theme);
 				break;
 			case "startRPG":
-				startRPG(_user, _data.rpgId);
+				startRPG(_user, _data);
 				break;
 			case "tryAddPlayer":
-				tryAddPlayer(_user, _data.rpg);
+				tryAddPlayer(_user, _data);
 				break;
 			case "tryCreateRPG":
 				tryCreateRPG(_user);
 				break;
-			case "updateRPGs":
-				updateRPGs(_user);
-				break;
 			case "updateRPG":
-				updateRPG(_user, _data.rpgId);
+				updateRPG(_user, _data);
+				break;
+			case "updateRPGs":
+				updateRPGs(_user, false, null, null);
 				break;
 		}
-	};
-
-	this.openRPG = function (_user, _rpg, text)
-	{
-		HtmlHandler.sendRPGOverview(_user);
-		setTimeout(function ()
-		{
-			updateRPGs(_user, _rpg)
-		}, 500);
-		setTimeout(function ()
-		{
-			HtmlHandler.sendEvent(_user, "info", { msg: text })
-		}, 500);
 	};
 
 	// Event Funktionen
@@ -93,7 +84,7 @@ var EventHandler = (new function ()
 		}
 	}
 
-	function createRPG(_user, _uid)
+	function createRPG(_user, _uid, _page)
 	{
 		var host = Users.getByUid(_uid);
 		if (host)
@@ -101,7 +92,8 @@ var EventHandler = (new function ()
 			var id = DB.addNum(Keys.RPG_COUNTER, 1);
 			RPG.eventCreateRPG(_user, id, host);
 			var rpg = RPGS.getRPG(id);
-			updateRPGs(_user, rpg);
+			getRPG(_user, id);
+			HtmlHandler.sendEvent(_user, "updateRPGLists", RPGS.getRPGsData());
 			if (!host.equals(_user))
 			{
 				EventHandler.openRPG(host, rpg, S.eh.createdRPG(_user));
@@ -117,11 +109,8 @@ var EventHandler = (new function ()
 	{
 		if (RPG.eventEnd(_user, _id))
 		{
-			updateRPGs(_user);
-			setTimeout(function ()
-			{
-				sendInfo(_user, S.eh.endRPGSucceeded);
-			}, 500);
+			updateRPGs(_user, true, null, null);
+			sendInfo(_user, S.eh.endRPGSucceeded);
 		}
 		else
 		{
@@ -129,20 +118,30 @@ var EventHandler = (new function ()
 		}
 	}
 
+	function getRPG(_user, _id)
+	{
+		var rpg = RPGS.getRPG(_id);
+		if (rpg)
+		{
+			HtmlHandler.sendEvent(_user, "getRPG", encodeRPG(rpg, false));
+		}
+		else
+		{
+			sendError(_user, S.eh.getRPGFailed);
+		}
+	}
+
 	function getPlayers(_user, _uids)
 	{
-		HtmlHandler.sendEvent(_user, "getPlayers", { nicks: getPlayerNicks(_uids) });
+		HtmlHandler.sendEvent(_user, "getPlayers", getPlayerNicks(_uids));
 	}
 
 	function leaveRPG(_user, _id)
 	{
 		if (RPG.eventLeave(_user, _id))
 		{
-			updateRPGs(_user);
-			setTimeout(function ()
-			{
-				sendInfo(_user, S.eh.leaveRPGSucceeded);
-			}, 500);
+			updateRPGs(_user, true, null);
+			sendInfo(_user, S.eh.leaveRPGSucceeded);
 		}
 		else
 		{
@@ -159,7 +158,7 @@ var EventHandler = (new function ()
 	{
 		if (RPG.eventRemovePlayer(_user, _id, _uid))
 		{
-			updateRPG(_user, _id);
+			updateRPG(_user, _id, false);
 			sendInfo(_user, S.eh.removePlayerSucceeded);
 		}
 		else
@@ -172,7 +171,7 @@ var EventHandler = (new function ()
 	{
 		if (RPG.eventSetDesc(_id, _desc))
 		{
-			updateRPG(_user, _id);
+			updateRPG(_user, _id, true);
 		}
 		else
 		{
@@ -184,7 +183,7 @@ var EventHandler = (new function ()
 	{
 		if (RPG.eventSetName(_id, _name))
 		{
-			updateRPG(_user, _id);
+			updateRPG(_user, _id, true);
 		}
 		else
 		{
@@ -196,7 +195,7 @@ var EventHandler = (new function ()
 	{
 		if (RPG.eventSetTheme(_id, _theme))
 		{
-			updateRPG(_user, _id);
+			updateRPG(_user, _id, true);
 		}
 		else
 		{
@@ -208,11 +207,8 @@ var EventHandler = (new function ()
 	{
 		if (RPG.eventStart(_user, _id))
 		{
-			updateRPG(_user, _id);
-			setTimeout(function ()
-			{
-				sendInfo(_user, S.eh.startRPGSucceeded);
-			}, 500);
+			updateRPG(_user, _id, true);
+			sendInfo(_user, S.eh.startRPGSucceeded);
 		}
 		else
 		{
@@ -266,38 +262,42 @@ var EventHandler = (new function ()
 		return nicks;
 	}
 
+	// Send Events
+
 	function sendError(_user, _text)
 	{
-		HtmlHandler.sendEvent(_user, 'error', { msg: _text });
+		HtmlHandler.sendEvent(_user, "error", _text);
 	}
 
 	function sendInfo(_user, _text)
 	{
-		HtmlHandler.sendEvent(_user, 'info', { msg: _text });
+		HtmlHandler.sendEvent(_user, "info", _text);
 	}
 
-	function updateRPG(_user, _id)
+	function updateRPG(_user, _id, _updateList)
 	{
 		var rpg = RPGS.getRPG(_id);
 		HtmlHandler.sendEvent(_user, "updateRPG", {
-			pageData: RPGS.getPageData(_user),
-			rpg: rpg,
-			playerNicks: getPlayerNicks(rpg.players)
+			rpg: encodeRPG(rpg, false),
+			pn: getPlayerNicks(rpg.players)
 		});
+		if (_updateList)
+		{
+			HtmlHandler.sendEvent(_user, "updateRPGLists", RPGS.getRPGsData());
+		}
 	}
 
-	function updateRPGs(_user, _rpg)
+	function updateRPGs(_user, _forceSwitch, _page, _rpg)
 	{
-		if (_rpg)
-		{
-			HtmlHandler.sendEvent(_user, "updateRPGs", {
-				pageData: RPGS.getPageData(_user),
-				rpg: _rpg
-			});
-		}
-		else
-		{
-			HtmlHandler.sendEvent(_user, "updateRPGs", { pageData: RPGS.getPageData(_user) });
-		}
+		HtmlHandler.sendEvent(_user, "updateRPGs", RPGS.getPageData(_user, _forceSwitch, _page, _rpg));
 	}
+
+	this.openRPG = function (_user, _rpg, text)
+	{
+		HtmlHandler.sendRPGDetails(_user, _rpg);
+		setTimeout(function ()
+		{
+			sendInfo(_user, text);
+		}, 500);
+	};
 }());

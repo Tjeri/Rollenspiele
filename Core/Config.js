@@ -5,6 +5,7 @@ function Config()
 
 	this.brackets = "{[(<>)]}";
 	this.timeout = 4 * 60 * 1000;
+	this.timeoutPublic = 30 * 60 * 1000;
 	this.version = "0.4.5";
 
 	this.moduleChannelCover = true;
@@ -27,6 +28,11 @@ Config.brackets = function ()
 Config.timeout = function ()
 {
 	return Config.get().timeout;
+};
+
+Config.timeoutPublic = function ()
+{
+	return Config.get().timeoutPublic;
 };
 
 Config.version = function ()
@@ -134,14 +140,14 @@ Config.show = function (_user)
 	modules.sort();
 
 	settings.forEach(function (prop)
-					 {
-						 str += Config.setting(prop, cfg[prop]);
-					 });
+	{
+		str += Config.setting(prop, cfg[prop]);
+	});
 	str += "°#°";
 	modules.forEach(function (prop)
-					{
-						str += Config.module(prop, cfg[prop]);
-					});
+	{
+		str += Config.module(prop, cfg[prop]);
+	});
 	_user.sendPrivateMessage(str);
 };
 
@@ -153,24 +159,11 @@ Config.update = function (_user)
 		var cfg = Config.get();
 		cfg.version = version;
 
-		if (cfg.hasOwnProperty("moduleHTMLBox"))
+		for (var prop in Config.cfg)
 		{
-			Config.cfg.debug = cfg.debug;
-			Config.cfg.moduleChannelCover = cfg.moduleChannelCover;
-			Config.cfg.moduleCMTalk = cfg.moduleCMTalk;
-			Config.cfg.moduleRPGMode = cfg.moduleRPGMode;
-			Config.cfg.moduleRPGMods = cfg.moduleRPGMods;
-			Config.cfg.modulePopupOverlay = cfg.modulePopupOverlay;
-			cfg = Config.cfg;
-		}
-		else
-		{
-			for (var prop in Config.cfg)
+			if (Config.cfg.hasOwnProperty(prop) && !cfg.hasOwnProperty(prop))
 			{
-				if (Config.cfg.hasOwnProperty(prop) && !cfg.hasOwnProperty(prop))
-				{
-					cfg[prop] = Config.cfg[prop];
-				}
+				cfg[prop] = Config.cfg[prop];
 			}
 		}
 

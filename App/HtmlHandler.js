@@ -1,7 +1,7 @@
 var HtmlHandler = (new function ()
 {
 	var rpgList = AppContent.overlayContent(new HTMLFile('channelWindow.html'), 100, 40);
-	var rpgHint = AppContent.overlayContent(new HTMLFile('channelWindow.html'), 180, 80);
+	var rpgHint = AppContent.overlayContent(new HTMLFile('channelWindow.html'), 200, 80);
 
 	this.removeContent = function (_user)
 	{
@@ -17,21 +17,26 @@ var HtmlHandler = (new function ()
 		});
 	};
 
-	this.sendEvent = function (_user, _type, _data) {
-		if (!Channel.getName().startsWith("/"))
+	this.sendEvent = function (_user, _type, _data)
+	{
+		if (Config.modulePopupOverlay())
 		{
 			_user.sendEvent(_type, _data, AppViewMode.Popup);
-		} else {
+		}
+		else
+		{
 			_user.sendEvent(_type, _data);
 		}
 	};
 
 	this.sendRPGOverview = function (_user)
 	{
-		var rpgOverview = new HTMLFile('rpgOverview.html', RPGS.getPageData(_user));
+		var pageData = RPGS.getPageData(_user, true, RPGList.All, null);
+		var rpgOverview = new HTMLFile('rpgOverview.html', pageData);
 
 		var content = AppContent.overlayContent(rpgOverview, 800, 500);
-		if (Config.modulePopupOverlay()) {
+		if (Config.modulePopupOverlay())
+		{
 			content = AppContent.popupContent(rpgOverview, 800, 500);
 		}
 		_user.sendAppContent(content);
@@ -39,10 +44,11 @@ var HtmlHandler = (new function ()
 
 	this.sendRPGDetails = function (_user, _currentRPG)
 	{
-		var rpgOverview = new HTMLFile('rpgOverview.html', RPGS.getPageData(_user, _currentRPG));
+		var rpgOverview = new HTMLFile('rpgOverview.html', RPGS.getPageData(_user, true, null, _currentRPG));
 
 		var content = AppContent.overlayContent(rpgOverview, 800, 500);
-		if (Config.modulePopupOverlay()) {
+		if (Config.modulePopupOverlay())
+		{
 			content = AppContent.popupContent(rpgOverview, 800, 500);
 		}
 		_user.sendAppContent(content);

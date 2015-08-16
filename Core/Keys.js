@@ -4,6 +4,7 @@ var Keys = (new function () {
     this.CHANNELS = "CHANNELS";             // List of active channels
     this.CONFIG = "CONFIG";                 // Config File
     this.MODERATORS = "MODERATORS";         // List of privileged users
+    this.MAY_SHOW_PM = "MAY_SHOW_PM";       // Last shown Public Message with missing brackets
     this.RPG = "RPG_";                      // Prefix for RPGs (RPG_ID)
     this.RPG_COUNTER = "RPG_COUNTER";       // Counter for RPG IDs
     this.RPG_MODE = "RPG_MODE_";            // Indicator if RPG Mode is active

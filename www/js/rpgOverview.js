@@ -1,25 +1,19 @@
 $(function ()
 {
 	var uid;
-	var rpgs;
+	var runningRPGs = [];
+	var allRPGs = [];
+	var ownRPGs = [];
 	var channel;
 	var isAllowed;
 	var isMod;
 	var isDev;
+	var currentOverviewTab = Client.pageData.op;
+	var currentDetailsTab = '#selectorDetails';
 
 	updatePageData(Client.pageData);
 
-	var currentOverviewTab = '#selectorAll';
-	rpgs.some(function (rpg)
-	{
-		if (rpg.running)
-		{
-			currentOverviewTab = '#selectorRunning';
-			return true;
-		}
-	});
-	var currentDetailsTab = '#selectorDetails';
-	var currentRPG = Client.pageData.currentRPG;
+	var currentRPG = decodeRPG(Client.pageData.or);
 	var currentPlayerNicks = [];
 
 	var messageModal = $('#messageModal');
@@ -39,19 +33,13 @@ $(function ()
 
 	function updatePageData(pageData)
 	{
-		uid = pageData.uid;
-		rpgs = [];
-		pageData.rpgs.forEach(function(rpg){
-			rpgs.push(decodeRPG(rpg));
-		});
-		channel = pageData.channel;
-		if (channel.startsWith('/'))
-		{
-			channel = channel.substr(1);
-		}
-		isAllowed = pageData.isAllowed;
-		isMod = pageData.isMod;
-		isDev = pageData.isDev;
+		uid = pageData.u;
+		channel = pageData.c;
+		isAllowed = pageData.ia;
+		isMod = pageData.im;
+		isDev = pageData.id;
+
+		processRPGs(pageData.r);
 
 		if (!(isAllowed || isMod || isDev))
 		{
@@ -59,21 +47,67 @@ $(function ()
 		}
 	}
 
+	function processRPGs(rpgs)
+	{
+		allRPGs = decodeRPGs(rpgs);
+		runningRPGs = [];
+		ownRPGs = [];
+		allRPGs.forEach(function (rpg)
+		{
+			if (rpg.running)
+			{
+				runningRPGs.push(rpg);
+			}
+			if (rpg.players.indexOf(uid) > -1)
+			{
+				ownRPGs.push(rpg);
+			}
+		});
+
+		var textRunning = $('#textRunning');
+		if (runningRPGs.length > 0)
+		{
+			textRunning.text('Laufende RPGs (' + runningRPGs.length + ')');
+			textRunning.removeClass('disabledLink');
+		}
+		else
+		{
+			textRunning.text('Laufende RPGs');
+			textRunning.addClass('disabledLink');
+		}
+		$('#textAll').text('Alle RPGs (' + allRPGs.length + ')');
+		var textOwn = $('#textOwn');
+		if (ownRPGs.length > 0)
+		{
+			textOwn.text('Deine RPGs (' + ownRPGs.length + ')');
+			textOwn.removeClass('disabledLink');
+		}
+		else
+		{
+			textOwn.text('Deine RPGs');
+			textOwn.addClass('disabledLink');
+		}
+	}
+
 	Client.addEventListener('*', function (event)
 	{
+		console.log(event.type);
 		var type = event.type;
 		var data = event.data;
 
 		switch (type)
 		{
 			case 'error':
-				showMessageModal('Fehler', data.msg);
+				showMessageModal('Fehler', data);
 				break;
 			case 'info':
-				showMessageModal('Info', data.msg);
+				showMessageModal('Info', data);
 				break;
 			case 'getPlayers':
-				getPlayers(data.nicks);
+				getPlayers(data);
+				break;
+			case 'getRPG':
+				getRPG(data);
 				break;
 			case 'tryAddPlayer':
 				if (data.nicks.length == 0)
@@ -89,41 +123,59 @@ $(function ()
 				showListModal('RPG erstellen', 'Spielleiter:', data, 'createRPG');
 				break;
 			case 'updateRPG':
-				updateRPG(data.pageData, data.rpg, data.playerNicks);
+				updateRPG(data.rpg, data.pn);
+				break;
+			case 'updateRPGLists':
+				processRPGs(data);
 				break;
 			case 'updateRPGs':
-				updateRPGs(data.pageData, data.rpg);
+				updateRPGs(data);
 				break;
 
 		}
 		setAnimationRefreshing(false);
 	});
 
-	/** EVENT HANDLER **/
-	function updateRPG(pageData, rpg, playerNicks)
+	function decodeRPGs(rpgs)
 	{
-		updatePageData(pageData);
-		currentRPG = rpg;
-		currentPlayerNicks = playerNicks;
-		showRPGDetails();
-		switchDetailsTab(currentDetailsTab);
+		var decoded = [];
+		rpgs.forEach(function (rpg)
+		{
+			decoded.push(decodeRPG(rpg));
+		});
+		return decoded;
 	}
 
-	function updateRPGs(pageData, rpg)
+	/** EVENT HANDLER **/
+	function updateRPG(rpg, playerNicks)
+	{
+		currentRPG = decodeRPG(rpg);
+		currentPlayerNicks = playerNicks;
+		showRPGDetails();
+	}
+
+	function updateRPGs(pageData)
 	{
 		updatePageData(pageData);
-		if (rpg)
+		if (pageData.or)
 		{
-			currentRPG = rpg;
+			currentRPG = pageData.or;
 			showRPGDetails();
 		}
 		else
 		{
 			if (currentRPG == null)
 			{
-				switchOverviewTab(currentOverviewTab);
+				if (pageData.fs && pageData.op)
+				{
+					switchOverviewTab(pageData.op);
+				}
+				else
+				{
+					switchOverviewTab(currentOverviewTab);
+				}
 			}
-			else
+			else if (pageData.fs)
 			{
 				showRPGOverview();
 			}
@@ -137,6 +189,11 @@ $(function ()
 		{
 			switchDetailsTab(currentDetailsTab);
 		}
+	}
+
+	function getRPG(rpg) {
+		currentRPG = decodeRPG(rpg);
+		showRPGDetails();
 	}
 
 	/** MODALS **/
@@ -157,7 +214,7 @@ $(function ()
 		var action = $(this).attr('action');
 		if (action == 'setName')
 		{
-			Client.sendEvent('setName', { rpgId: currentRPG.id, name: $('#textInputModal').val() });
+			Client.sendEvent('setName', { rpgId: currentRPG.id, name: $('#textInputModal').val().substr(0, 60) });
 		}
 	});
 	$('#buttonThemeModal').on('click', function ()
@@ -183,25 +240,25 @@ $(function ()
 	});
 
 	/** SELECTORS **/
-	$('#selectorRunning').on('click', function ()
+	$(RPGList.Running).on('click', function ()
 	{
-		if (currentOverviewTab != '#selectorRunning')
+		if (currentOverviewTab != RPGList.Running)
 		{
-			switchOverviewTab('#selectorRunning');
+			switchOverviewTab(RPGList.Running);
 		}
 	});
-	$('#selectorAll').on('click', function ()
+	$(RPGList.All).on('click', function ()
 	{
-		if (currentOverviewTab != '#selectorAll')
+		if (currentOverviewTab != RPGList.All)
 		{
-			switchOverviewTab('#selectorAll');
+			switchOverviewTab(RPGList.All);
 		}
 	});
-	$('#selectorOwn').on('click', function ()
+	$(RPGList.Own).on('click', function ()
 	{
-		if (currentOverviewTab != '#selectorOwn')
+		if (currentOverviewTab != RPGList.Own)
 		{
-			switchOverviewTab('#selectorOwn');
+			switchOverviewTab(RPGList.Own);
 		}
 	});
 
@@ -229,16 +286,12 @@ $(function ()
 	$(document).on('click', '._rowRPG', function ()
 	{
 		var rpgId = $(this).attr('rpgId');
-		rpgs.some(function (rpg)
-		{
-			if (rpg.id == rpgId)
-			{
-				currentRPG = rpg;
-				return true;
-			}
-			return false;
-		});
-		showRPGDetails();
+		Client.sendEvent('getRPG', rpgId);
+		setAnimationRefreshing(true);
+	});
+	$(document).on('click', '.linkChannel', function ()
+	{
+		Client.executeSlashCommand("/go +" + $(this).attr('channel'));
 	});
 	$('#buttonCreateRPG').on('click', function ()
 	{
@@ -247,7 +300,7 @@ $(function ()
 	});
 	$(document).on('click', '.createRPG', function ()
 	{
-		Client.sendEvent('createRPG', { uid: $(this).attr('uid') });
+		Client.sendEvent('createRPG', $(this).attr('uid'));
 	});
 
 	/** DETAILS **/
@@ -258,7 +311,7 @@ $(function ()
 	$('#buttonRefreshRPGDetails').on('click', function ()
 	{
 		setAnimationRefreshing(true);
-		Client.sendEvent('updateRPG', { rpgId: currentRPG.id });
+		Client.sendEvent('updateRPG', currentRPG.id);
 	});
 	$(document).on('click', '#linkEditName', function ()
 	{
@@ -303,7 +356,9 @@ $(function ()
 			});
 			$('#select1ThemeModal').val(selected1);
 			$('#select2ThemeModal').val(selected2);
-		} else {
+		}
+		else
+		{
 			$('#select1ThemeModal').select('');
 			$('#select2ThemeModal').select('');
 		}
@@ -317,11 +372,11 @@ $(function ()
 	{
 		if (currentRPG.running)
 		{
-			Client.sendEvent('endRPG', { rpgId: currentRPG.id });
+			Client.sendEvent('endRPG', currentRPG.id);
 		}
 		else
 		{
-			Client.sendEvent('startRPG', { rpgId: currentRPG.id });
+			Client.sendEvent('startRPG', currentRPG.id);
 		}
 	});
 	$('#linkChangeHost').on('click', function ()
@@ -352,7 +407,7 @@ $(function ()
 	});
 	$('#linkLeave').on('click', function ()
 	{
-		Client.sendEvent('leaveRPG', { rpgId: currentRPG.id });
+		Client.sendEvent('leaveRPG', currentRPG.id);
 	});
 	$(document).on('click', '.nickLink', function ()
 	{
@@ -364,12 +419,12 @@ $(function ()
 	});
 	$(document).on('click', '.leaveRPG', function ()
 	{
-		Client.sendEvent('leaveRPG', { rpgId: currentRPG.id });
+		Client.sendEvent('leaveRPG', currentRPG.id);
 	});
 	$(document).on('click', '#addPlayer', function ()
 	{
 		setAnimationRefreshing(true);
-		Client.sendEvent('tryAddPlayer', { rpg: currentRPG });
+		Client.sendEvent('tryAddPlayer', currentRPG);
 	});
 	$(document).on('click', '.addPlayer', function ()
 	{
@@ -390,6 +445,8 @@ $(function ()
 			$('#buttonRefreshRPGDetails').removeClass('rotating');
 		}
 	}
+
+	/** RPG Overview **/
 
 	function showRPGOverview()
 	{
@@ -414,21 +471,25 @@ $(function ()
 
 		var running = false;
 		var own = false;
-
 		var textEmpty;
+		var rpgList;
+
 		switch (tab)
 		{
-			case '#selectorRunning':
+			case RPGList.Running:
 				own = true;
+				rpgList = runningRPGs;
 				textEmpty = 'Momentan laufen leider keine RPGs';
 				break;
-			case '#selectorAll':
+			case RPGList.All:
 				running = true;
 				own = true;
+				rpgList = allRPGs;
 				textEmpty = 'Keine RPGs gespeichert.';
 				break;
-			case '#selectorOwn':
+			case RPGList.Own:
 				running = true;
+				rpgList = ownRPGs;
 				textEmpty = 'Du bist bisher in keinem RPG';
 				break;
 		}
@@ -437,20 +498,10 @@ $(function ()
 		container.fadeOut(200, function ()
 		{
 			container.empty();
-			var shownRPGs = [];
-
-			for (var i = 0; i < rpgs.length; ++i)
-			{
-				var rpg = rpgs[i];
-				if ((running || rpg.running) && (own || rpg.players.indexOf(uid) > -1))
-				{
-					shownRPGs.push(rpg);
-				}
-			}
 
 			var tableData = {
-				hasRPGs: shownRPGs.length > 0,
-				rpgs: shownRPGs,
+				hasRPGs: rpgList.length,
+				rpgs: rpgList,
 				dot: function ()
 				{
 					return this.running ? 'greenDot' : 'grayDot'
@@ -461,7 +512,12 @@ $(function ()
 				},
 				getTheme: function ()
 				{
-					return this.theme ? this.theme : 'Kein Thema festgelegt'
+					return this.theme ? this.theme : '-'
+				},
+				runningPage: !running,
+				channel: function ()
+				{
+					return this.channel;
 				},
 				textEmpty: textEmpty
 			};
@@ -470,6 +526,8 @@ $(function ()
 			container.fadeIn(200);
 		});
 	}
+
+	/** RPG Details **/
 
 	function showRPGDetails()
 	{
@@ -481,7 +539,7 @@ $(function ()
 		$(currentDetailsTab).addClass('active');
 
 		setAnimationRefreshing(true);
-		Client.sendEvent('getPlayers', { uids: currentRPG.players });
+		Client.sendEvent('getPlayers', currentRPG.players);
 
 		var statusDetails = $('#statusDetails');
 		if (currentRPG.running)
@@ -639,6 +697,8 @@ $(function ()
 			content.fadeIn(200);
 		});
 	}
+
+	/** Show Modals **/
 
 	function showMessageModal(caption, text)
 	{

@@ -209,7 +209,7 @@ RPG.hostLeft = function (_rpg, _user, _index)
 		_rpg.host = Users.getByUid(_rpg.players[0]);
 	}
 	_rpg.hostUid = _rpg.host.getUserId();
-	EventHandler.openRPG(_rpg.host, _rpg, S.rpg.leave_hostLeft_New(nick));
+	EventHandler.openRPG(_rpg.host, _rpg, S.rpg.leave_hostLeft_New(_user));
 	RPG.sendPlayers(_rpg, S.rpg.leave_hostLeft(nick, _rpg.host, RPG.getName(_rpg)), false);
 };
 

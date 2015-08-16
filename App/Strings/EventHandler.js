@@ -8,6 +8,7 @@ S.eh = {
 	createRPGFailed: "RPG erstellen fehlgeschlagen.",
 	endRPGFailed: "RPG beenden fehlgeschlagen.",
 	endRPGSucceeded: "Das RPG wurde beendet.",
+	getRPGFailed: "Das RPG konnte nicht gefunden werden.",
 	leaveRPGFailed: "RPG verlassen fehlgeschlagen.",
 	leaveRPGSucceeded: "Du hast das RPG verlassen.",
 	removePlayerFailed: "Spieler entfernen fehlgeschlagen.",
