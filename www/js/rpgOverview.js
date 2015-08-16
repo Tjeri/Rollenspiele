@@ -436,6 +436,7 @@ $(function ()
 		container.empty();
 		container.fadeOut(200, function ()
 		{
+			container.empty();
 			var shownRPGs = [];
 
 			for (var i = 0; i < rpgs.length; ++i)
@@ -586,6 +587,7 @@ $(function ()
 		content.empty();
 		content.fadeOut(200, function ()
 		{
+			content.empty();
 			switch (tab)
 			{
 				case '#selectorDetails':
@@ -595,6 +597,7 @@ $(function ()
 
 					var details = {
 						id: currentRPG.id,
+						canManage: uid == currentRPG.hostUid || isDev,
 						name: rpgName,
 						theme: rpgTheme,
 						desc: rpgDesc
@@ -676,7 +679,7 @@ $(function ()
 		$('#textareaModal').modal();
 		$('#captionTextareaModal').text(caption);
 		$('#labelTextareaModal').text(label);
-		$('#textTextareaModal').text(currentRPG.desc);
+		$('#textTextareaModal').val(currentRPG.desc);
 		var btn = $('#buttonTextareaModal');
 		btn.text(buttonText);
 		btn.attr('action', action);

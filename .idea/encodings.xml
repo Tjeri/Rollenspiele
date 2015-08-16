@@ -3,22 +3,9 @@
   <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false" defaultCharsetForPropertiesFiles="UTF-8">
     <file url="file://$PROJECT_DIR$" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/.idea" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/Framework" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/Framework/Core" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/Framework/Core/Bot.js" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/Framework/Core/Channel.js" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/Framework/Core/Databases.js" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/Framework/Core/Log.js" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/Framework/Core/Users.js" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/Rollenspiele" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/Rollenspiele/ChannelCover.js" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/Rollenspiele/Rollenspiele.js" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/Rollenspiele/StringKeys.js" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/Rollenspiele/Strings.js" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/app.config" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/main.js" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/www" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/www/style.css" charset="UTF-8" />
     <file url="PROJECT" charset="UTF-8" />
   </component>
 </project>

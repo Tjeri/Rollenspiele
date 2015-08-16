@@ -214,22 +214,6 @@
 		</th>
 	</tr>
 	</thead>
-	<tfoot>
-	<tr class="_row">
-		<th class="_entry borderRight rowId">
-			<span class="boldText">ID</span>
-		</th>
-		<th class="_entry borderRight rowState">
-			<span class="boldText">Status</span>
-		</th>
-		<th class="_entry borderRight rowName">
-			<span class="boldText">Name</span>
-		</th>
-		<th class="_entry hidden-xs rowTheme">
-			<span class="boldText">Thema</span>
-		</th>
-	</tr>
-	</tfoot>
 	<tbody>
 	{{#rpgs}}
 		<tr class="_row _rowRPG" rpgId="{{id}}">
@@ -263,18 +247,24 @@
 <br />
 <span class="boldText">Name: </span>
 <span>{{name}}</span>
-<a class="boldText cursorPointer" id="linkEditName">[Bearbeiten]</a>
+{{#canManage}}
+	<a class="boldText cursorPointer" id="linkEditName">[Bearbeiten]</a>
+{{/canManage}}
 <br />
 <br />
 <span class="boldText">Thema: </span>
 <span>{{theme}}</span>
-<a class="boldText cursorPointer" id="linkEditTheme">[Bearbeiten]</a>
+{{#canManage}}
+	<a class="boldText cursorPointer" id="linkEditTheme">[Bearbeiten]</a>
+{{/canManage}}
 <br />
 <br />
 <span class="boldText">Beschreibung: </span>
-<a class="boldText cursorPointer" id="linkEditDesc">[Bearbeiten]</a>
+{{#canManage}}
+	<a class="boldText cursorPointer" id="linkEditDesc">[Bearbeiten]</a>
+{{/canManage}}
 <br />
-<pre>{{desc}}</pre>
+<pre class="wrapper">{{desc}}</pre>
 </script>
 
 <script id="templatePlayersRPGDetails" type="x-tmpl-mustache">
