@@ -7,7 +7,9 @@ var rpgMapping =
 	p: { name: 'players', forList: true },
 	n: { name: 'name', forList: true },
 	th: { name: 'theme', forList: true },
-	d: { name: 'desc', forList: false }
+	d: { name: 'desc', forList: false },
+	s: { name: 'start', forList: false },
+	t: { name: 'time', forList: false }
 };
 
 function encodeRPG(_rpg, _forList)

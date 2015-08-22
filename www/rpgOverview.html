@@ -4,12 +4,15 @@
 	<meta charset="UTF-8">
 	<script type="text/javascript" src="/apps/api/knuddels-api.js"></script>
 	<script>
+		Client.includeCSS('libs/datatables/datatables.min.css');
 		Client.includeCSS('/apps/api/bootstrap3.3.4/css/bootstrap.min.css');
 		Client.includeCSS('/apps/api/bootstrap3.3.4/css/bootstrap-theme.min.css');
 		Client.includeCSS('css/rpgOverview.css');
 		Client.includeJS('/apps/api/jquery.min.js');
+		Client.includeJS('libs/datatables/datatables.min.js');
 		Client.includeJS('/apps/api/bootstrap3.3.4/js/bootstrap.min.js');
 		Client.includeJS('/apps/api/mustache-2.0.0.min.js');
+		Client.includeJS('libs/moment-with-locales.min.js');
 		Client.includeJS('core/Enums.js');
 		Client.includeJS('core/Mapping.js');
 		Client.includeJS('js/rpgOverview.js');
@@ -176,6 +179,7 @@
 		<div class="clear"></div>
 		<ul class="nav nav-tabs nav-justified">
 			<li role="presentation" id="selectorDetails" class="boldText cursorPointer"><a>Spielinformationen</a></li>
+			<li role="presentation" id="selectorStats" class="boldText cursorPointer"><a>Spielstatistiken</a></li>
 			<li role="presentation" id="selectorPlayers" class="boldText cursorPointer"><a>Spieler</a></li>
 		</ul>
 	</div>
@@ -198,15 +202,19 @@
 
 
 <script id="templateContentRPGOverview" type="x-tmpl-mustache">
-<table class="table customTable">
+<table id="rpgOverviewTable" class="table customTable">
 	<thead>
 	<tr class="_row">
+		<th class="_entry borderRight rowLast">
+			<span class="boldText">Letztes</span>
+		</th>
 		<th class="_entry borderRight rowId">
 			<span class="boldText">ID</span>
 		</th>
 		<th class="_entry borderRight rowState">
 			<span class="boldText">Status</span>
 		</th>
+			<td class="_entry borderRight rowState"></td>
 		<th class="_entry borderRight rowName">
 			<span class="boldText">Name</span>
 		</th>
@@ -223,11 +231,17 @@
 	<tbody>
 	{{#rpgs}}
 		<tr class="_row _rowRPG" rpgId="{{id}}">
+			<td class="_entry borderRight rowLast">
+				<span>{{index}}</span>
+			</td>
 			<td class="_entry borderRight rowId">
 				<span>{{id}}</span>
 			</td>
 			<td class="_entry borderRight rowState">
 				<div class="{{dot}}"></div>
+			</td>
+			<td class="_entry borderRight rowState">
+				<span>{{stateOrder}}</span>
 			</td>
 			<td class="_entry borderRight rowName">
 				<span>{{getName}}</span>
@@ -256,6 +270,17 @@
 <span>{{id}}</span>
 <br />
 <br />
+{{#running}}
+	<span class="boldText">Channel: </span>
+	{{#sameChannel}}
+		<span>{{channel}}</span>
+	{{/sameChannel}}
+	{{^sameChannel}}
+		<a class="channelLink cursorPointer" channel="{{channel}}">{{channel}}</a>
+	{{/sameChannel}}
+	<br />
+	<br />
+{{/running}}
 <span class="boldText">Name: </span>
 <span>{{name}}</span>
 {{#canManage}}
@@ -276,6 +301,25 @@
 {{/canManage}}
 <br />
 <code class="wrapper">{{desc}}</code>
+</script>
+
+<script id="templateStatsRPGDetails" type="x-tmpl-mustache">
+<br />
+<br />
+<span class="boldText">Spielzeit: </span>
+<span>{{time}}</span>
+<br />
+<br />
+{{#running}}
+	<span class="boldText">aktuelle Spielzeit: </span>
+	<span>{{currentTime}}</span>
+	<br />
+	<br />
+{{/running}}
+{{^running}}
+	<span class="boldText">Zuletzt gespielt: </span>
+	<span>{{lastPlayed}}</span>
+{{/running}}
 </script>
 
 <script id="templatePlayersRPGDetails" type="x-tmpl-mustache">

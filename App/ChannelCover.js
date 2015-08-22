@@ -10,15 +10,15 @@ var ChannelCover = (new function () {
         }
     };
 
-    this.showList = function (user) {
+    this.showList = function (_user) {
         var list = "";
         getChanDB().forEach(function (channel) {
             list += S.cc.chan(channel, getCMDB(channel));
         });
-        user.sendPrivateMessage(S.cc.showList(list));
+        _user.sendPrivateMessage(S.cc.showList(list));
     };
 
-    this.userJoined = function (user) {
+    this.userJoined = function (_user) {
         var chan = Channel.getName();
         var channels = getChanDB();
         if (channels.indexOf(chan) == -1) {
@@ -26,19 +26,19 @@ var ChannelCover = (new function () {
             channels.sort();
             saveChanDB(channels);
             saveCMDB(chan, Channel.getOnlineCMs());
-        } else if (user.isChannelModerator()) {
+        } else if (_user.isChannelModerator()) {
             saveCMDB(chan, Channel.getOnlineCMs());
         }
     };
 
-    this.userLeft = function (user) {
+    this.userLeft = function (_user) {
         var chan = Channel.getName();
         if (Channel.getUsers(UserType.Human).length == 0) {
             var channels = getChanDB();
             var index = channels.indexOf(chan);
             channels.splice(index, 1);
             saveChanDB(channels);
-        } else if (user.isChannelModerator()) {
+        } else if (_user.isChannelModerator()) {
             var cms = Channel.getOnlineCMs();
             saveCMDB(chan, cms);
         }

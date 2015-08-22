@@ -1,5 +1,7 @@
 $(function ()
 {
+	moment.locale('de');
+
 	var uid;
 	var runningRPGs = [];
 	var allRPGs = [];
@@ -191,7 +193,8 @@ $(function ()
 		}
 	}
 
-	function getRPG(rpg) {
+	function getRPG(rpg)
+	{
 		currentRPG = decodeRPG(rpg);
 		showRPGDetails();
 	}
@@ -269,6 +272,13 @@ $(function ()
 			switchDetailsTab('#selectorDetails');
 		}
 	});
+	$('#selectorStats').on('click', function ()
+	{
+		if (currentDetailsTab != '#selectorStats')
+		{
+			switchDetailsTab('#selectorStats');
+		}
+	});
 	$('#selectorPlayers').on('click', function ()
 	{
 		if (currentDetailsTab != '#selectorPlayers')
@@ -312,6 +322,10 @@ $(function ()
 	{
 		setAnimationRefreshing(true);
 		Client.sendEvent('updateRPG', currentRPG.id);
+	});
+	$(document).on('click', '.channelLink', function ()
+	{
+		Client.executeSlashCommand('/go +' + $(this).attr('channel'));
 	});
 	$(document).on('click', '#linkEditName', function ()
 	{
@@ -498,6 +512,7 @@ $(function ()
 		container.fadeOut(200, function ()
 		{
 			container.empty();
+			var i = 1;
 
 			var tableData = {
 				hasRPGs: rpgList.length,
@@ -505,6 +520,14 @@ $(function ()
 				dot: function ()
 				{
 					return this.running ? 'greenDot' : 'grayDot'
+				},
+				index: function ()
+				{
+					return i++;
+				},
+				stateOrder: function ()
+				{
+					return this.running ? 0 : 1;
 				},
 				getName: function ()
 				{
@@ -524,6 +547,17 @@ $(function ()
 			container.append(Mustache.render(template, tableData));
 
 			container.fadeIn(200);
+			$('#rpgOverviewTable').DataTable({
+				autoWidth: false,
+				paging: false,
+				searching: false,
+				order: [0, 'asc'],
+				info: false,
+				columnDefs: [
+					{ targets: 2, orderData: 3 },
+					{ targets: 3, visible: false }
+				]
+			});
 		});
 	}
 
@@ -633,10 +667,6 @@ $(function ()
 	{
 		var content = $('#containerMainContentRPGDetails');
 
-		var templateDetails = $.trim($('#templateDetailsRPGDetails').html());
-		Mustache.parse(templateDetails);
-		var templatePlayers = $.trim($('#templatePlayersRPGDetails').html());
-		Mustache.parse(templatePlayers);
 
 		$(currentDetailsTab).removeClass('active');
 		$(tab).addClass('active');
@@ -649,12 +679,19 @@ $(function ()
 			switch (tab)
 			{
 				case '#selectorDetails':
+					var templateDetails = $.trim($('#templateDetailsRPGDetails').html());
+					Mustache.parse(templateDetails);
 					var rpgName = currentRPG.name ? currentRPG.name : 'Kein Name';
 					var rpgTheme = currentRPG.theme ? currentRPG.theme : 'Kein Thema';
 					var rpgDesc = currentRPG.desc ? currentRPG.desc : 'Keine Beschreibung';
 
 					var details = {
 						id: currentRPG.id,
+						running: currentRPG.running,
+						sameChannel: function () {
+							return currentRPG.channel == channel;
+						},
+						channel: currentRPG.channel,
 						canManage: uid == currentRPG.hostUid || isDev,
 						name: rpgName,
 						theme: rpgTheme,
@@ -662,7 +699,28 @@ $(function ()
 					};
 					content.append(Mustache.render(templateDetails, details));
 					break;
+				case '#selectorStats':
+					var templateStats = $.trim($('#templateStatsRPGDetails').html());
+					Mustache.parse(templateStats);
+
+					var stats = {
+						running: currentRPG.running,
+						time: function () {
+							return formatTime((Date.now() - currentRPG.start) + currentRPG.time);
+						},
+						currentTime: function () {
+							return formatTime(Date.now() - currentRPG.start);
+						},
+						lastPlayed: function() {
+							return moment(currentRPG.lastPlayed).format('LLL');
+						}
+					};
+
+					content.append(Mustache.render(templateStats, stats));
+					break;
 				case '#selectorPlayers':
+					var templatePlayers = $.trim($('#templatePlayersRPGDetails').html());
+					Mustache.parse(templatePlayers);
 					var players = [];
 					for (var i = 0; i < currentPlayerNicks.length; ++i)
 					{
@@ -743,5 +801,14 @@ $(function ()
 		var btn = $('#buttonTextareaModal');
 		btn.text(buttonText);
 		btn.attr('action', action);
+	}
+
+	function formatTime(time) {
+		var duration = moment.duration(time);
+		var ah = Math.floor(duration.asHours());
+		var h = ah >= 10 ? ah : '0' + ah;
+		var m = duration.minutes() >= 10 ? duration.minutes() : '0' + duration.minutes();
+		var s = duration.seconds() >= 10 ? duration.seconds() : '0' + duration.seconds();
+		return h + ':' + m + ':' + s;
 	}
 });

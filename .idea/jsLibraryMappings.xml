@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="JavaScriptLibraryMappings">
-    <file url="PROJECT" libraries="{Bootstrap, Mustache, UserApps-Api, jQuery}" />
+    <file url="PROJECT" libraries="{Bootstrap, DataTables, Moment, Mustache, UserApps-Api, jQuery}" />
   </component>
 </project>

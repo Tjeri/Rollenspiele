@@ -53,7 +53,7 @@ var Welcome = (new function () {
 
     this.welcome = function (_user) {
         var str = UserDB.getStr(_user, Keys.WELCOME, "");
-        if (str != "") {
+        if (str) {
             _user.sendPrivateMessage(str);
         }
     };

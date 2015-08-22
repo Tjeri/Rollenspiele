@@ -1,7 +1,7 @@
 var HtmlHandler = (new function ()
 {
-	var rpgList = AppContent.overlayContent(new HTMLFile('channelWindow.html'), 100, 40);
-	var rpgHint = AppContent.overlayContent(new HTMLFile('channelWindow.html'), 200, 80);
+	var rpgList = AppContent.overlayContent(new HTMLFile('channelWindow.html', false), 100, 40);
+	var rpgHint = AppContent.overlayContent(new HTMLFile('channelWindow.html', true), 200, 80);
 
 	this.removeContent = function (_user)
 	{

@@ -3,7 +3,6 @@ requireFile("Rollenspiele");
 
 var App = (new function ()
 {
-
 	this.chatCommands = RS.commands;
 
 	this.mayShowPublicMessage = function (_publicMessage)

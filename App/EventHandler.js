@@ -84,7 +84,7 @@ var EventHandler = (new function ()
 		}
 	}
 
-	function createRPG(_user, _uid, _page)
+	function createRPG(_user, _uid)
 	{
 		var host = Users.getByUid(_uid);
 		if (host)

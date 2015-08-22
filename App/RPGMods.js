@@ -7,13 +7,13 @@ var Mods = (new function () {
         if (mods.indexOf(uid) == -1) {
             mods.push(uid);
             saveMods(mods);
-            _user.sendPrivateMessage(S.mods.added(nick));
+            _user.sendPrivateMessage(S.mods.added(_mod));
             _mod.sendPrivateMessage(S.mods.addedYou(_user));
             if (!_user.isAppDeveloper()) {
                 KnuddelsServer.getAppDeveloper().sendPostMessage(S.mods.notify_topic_add, S.mods.notify_text_add(_user, _mod));
             }
         } else {
-            _user.sendPrivateMessage(S.mods.alreadyMod(nick));
+            _user.sendPrivateMessage(S.mods.alreadyMod(_mod));
         }
     };
 
@@ -43,7 +43,6 @@ var Mods = (new function () {
     };
 
     this.showMods = function (_user) {
-        var nicks = "";
         var mods = getMods();
         var users = [];
         mods.forEach(function (uid) {

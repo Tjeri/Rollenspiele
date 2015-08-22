@@ -8,5 +8,7 @@
     <orderEntry type="library" name="jQuery" level="application" />
     <orderEntry type="library" name="Mustache" level="application" />
     <orderEntry type="library" name="UserApps-Api" level="application" />
+    <orderEntry type="library" name="DataTables" level="application" />
+    <orderEntry type="library" name="Moment" level="application" />
   </component>
 </module>
