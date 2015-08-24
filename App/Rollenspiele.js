@@ -3,6 +3,7 @@ requireFile("CM Talk");
 requireFile("Commands");
 requireFile("EventHandler");
 requireFile("HtmlHandler");
+requireFile("Mutes");
 requireFile("Players");
 requireFile("RPG");
 requireFile("RPGMode");
@@ -156,6 +157,10 @@ var RS = (new function ()
 		{
 			Commands.startRPG(_user, _id);
 		},
+		timeout: function (_user, _params)
+		{
+			Commands.timeout(_user, _params);
+		},
 		topChannel: function (_user)
 		{
 			Commands.topChannel(_user);
@@ -186,11 +191,13 @@ var RS = (new function ()
 
 	this.mayShowPublicMessage = function (_user, _msg)
 	{
+		var result = true;
 		if (Config.moduleRPGMode())
 		{
-			return RPGMode.mayShowPublicMessage(_user, _msg);
+			result = result && RPGMode.mayShowPublicMessage(_user, _msg);
 		}
-		return true;
+		result = result && Mutes.mayShowPublicMessage(_user);
+		return result;
 	};
 
 	this.onAppEventReceived = function (appInstance, type, data)
@@ -242,7 +249,8 @@ var RS = (new function ()
 
 	this.onUserJoined = function (_user)
 	{
-		if (Config.moduleRPGMode()) {
+		if (Config.moduleRPGMode())
+		{
 			RPGMode.userJoined(_user);
 		}
 		if (Config.moduleHtml())

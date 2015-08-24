@@ -4,17 +4,20 @@ function Config()
 	this.debug = false;
 
 	this.brackets = "{[(<>)]}";
+	this.standardTimeout = 5;
 	this.timeout = 4 * 60 * 1000;
 	this.timeoutPublic = 30 * 60 * 1000;
 	this.version = "0.7";
 
 	this.moduleChannelCover = true;
 	this.moduleCMTalk = true;
+	this.moduleGroupMutes = false;
 	this.moduleHtml = true;
 	this.moduleHtmlRPGs = false;
 	this.modulePopupOverlay = false;
 	this.moduleRPGMode = true;
 	this.moduleRPGMods = true;
+	this.moduleTimeouts = false;
 }
 
 Config.cfg = new Config();
@@ -23,6 +26,11 @@ Config.cfg = new Config();
 Config.brackets = function ()
 {
 	return Config.get().brackets;
+};
+
+Config.standardTimeout = function ()
+{
+	return Config.get().standardTimeout;
 };
 
 Config.timeout = function ()
@@ -51,6 +59,11 @@ Config.moduleCMTalk = function ()
 	return Config.get().moduleCMTalk;
 };
 
+Config.moduleGroupMutes = function ()
+{
+	return Config.get().moduleGroupMutes;
+};
+
 Config.moduleHtml = function ()
 {
 	return Config.get().moduleHtml;
@@ -74,6 +87,11 @@ Config.moduleRPGMode = function ()
 Config.moduleRPGMods = function ()
 {
 	return Config.get().moduleRPGMods;
+};
+
+Config.moduleTimeouts = function ()
+{
+	return Config.get().moduleTimeouts;
 };
 
 /** DON'T CHANGE FROM HERE! **/
@@ -154,20 +172,17 @@ Config.show = function (_user)
 Config.update = function (_user)
 {
 	var version = Instance.getVersion();
-	if (Config.version() != version)
+	var cfg = Config.get();
+	cfg.version = version;
+
+	for (var prop in Config.cfg)
 	{
-		var cfg = Config.get();
-		cfg.version = version;
-
-		for (var prop in Config.cfg)
+		if (Config.cfg.hasOwnProperty(prop) && !cfg.hasOwnProperty(prop))
 		{
-			if (Config.cfg.hasOwnProperty(prop) && !cfg.hasOwnProperty(prop))
-			{
-				cfg[prop] = Config.cfg[prop];
-			}
+			cfg[prop] = Config.cfg[prop];
 		}
-
-		Config.save(cfg);
-		_user.sendPrivateMessage("Update der Config.js abgeschlossen.");
 	}
+
+	Config.save(cfg);
+	_user.sendPrivateMessage("Update der Config.js abgeschlossen.");
 };

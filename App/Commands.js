@@ -782,6 +782,49 @@ var Commands = (new function ()
 		}
 	};
 
+	this.timeout = function (_user, _params)
+	{
+		if (Allowance.isAllowed(_user))
+		{
+			if (Config.moduleTimeouts())
+			{
+				var params = _params.split(":");
+				var nick = params[0];
+				var remove = nick.startsWith("!");
+				if (remove)
+				{
+					nick = nick.substr(1);
+				}
+				var user = Users.getByNick(_user, nick);
+				if (user)
+				{
+					if (remove)
+					{
+						Mutes.removeTimedMute(_user, user);
+					}
+					else
+					{
+						var time = params[1];
+						if (!time)
+						{
+							time = Config.standardTimeout();
+						} else {
+							time = parseInt(time);
+							if (isNaN(time)) {
+								time = Config.standardTimeout();
+							}
+						}
+						Mutes.timedMute(_user, user, time);
+					}
+				}
+			}
+			else
+			{
+				_user.sendPrivateMessage(S.com.notAvailable);
+			}
+		}
+	};
+
 	// DEV Funktionen
 
 	this.config = function (_user, _params)
