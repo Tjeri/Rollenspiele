@@ -6,7 +6,7 @@ function Config()
 	this.brackets = "{[(<>)]}";
 	this.timeout = 4 * 60 * 1000;
 	this.timeoutPublic = 30 * 60 * 1000;
-	this.version = "0.6";
+	this.version = "0.7";
 
 	this.moduleChannelCover = true;
 	this.moduleCMTalk = true;

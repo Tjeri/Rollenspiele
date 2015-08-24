@@ -688,7 +688,8 @@ $(function ()
 					var details = {
 						id: currentRPG.id,
 						running: currentRPG.running,
-						sameChannel: function () {
+						sameChannel: function ()
+						{
 							return currentRPG.channel == channel;
 						},
 						channel: currentRPG.channel,
@@ -705,13 +706,21 @@ $(function ()
 
 					var stats = {
 						running: currentRPG.running,
-						time: function () {
-							return formatTime((Date.now() - currentRPG.start) + currentRPG.time);
+						time: function ()
+						{
+							var time = currentRPG.time;
+							if (currentRPG.running)
+							{
+								time += Date.now() - currentRPG.start;
+							}
+							return formatTime(time);
 						},
-						currentTime: function () {
+						currentTime: function ()
+						{
 							return formatTime(Date.now() - currentRPG.start);
 						},
-						lastPlayed: function() {
+						lastPlayed: function ()
+						{
 							return moment(currentRPG.lastPlayed).format('LLL');
 						}
 					};
@@ -803,7 +812,8 @@ $(function ()
 		btn.attr('action', action);
 	}
 
-	function formatTime(time) {
+	function formatTime(time)
+	{
 		var duration = moment.duration(time);
 		var ah = Math.floor(duration.asHours());
 		var h = ah >= 10 ? ah : '0' + ah;
