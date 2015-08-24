@@ -81,7 +81,7 @@ S.mu = {
 			time = minutes < 10 ? "0" + minutes : minutes;
 			time += ":";
 			time += seconds < 10 ? "0" + seconds : seconds;
-			users += "°#°°>" + nick + " (noch " + time + " Minuten)|/timeout !" + nick + "<°";
+			users += "°#°°>" + nick + "|/timeout !" + nick + "<° (noch " + time + " Minuten)";
 			nicks += nick;
 		});
 		return "Folgende User haben momentan Time-Out:°#°" + users + "°#°Ein Klick auf den Nick hebt den Time-Out auf.";

@@ -8,6 +8,7 @@ var Keys = (new function () {
 	this.MUTE_DURATION = "TIMED_MUTE_DURATION";     // Duration of Timed Mute
 	this.MUTE_GROUP = "GROUP_MUTE";                 // User is Group Muted + Text
     this.MUTE_START = "TIMED_MUTE_START";           // Start Time of Timed Mute
+    this.MUTE_TIMEOUT = "TIMEOUT_ID";               // ID of Timeout to clear if Time-Out is removed manually
     this.RPG = "RPG_";                              // Prefix for RPGs (RPG_ID)
 	this.RPG_COUNTER = "RPG_COUNTER";               // Counter for RPG IDs
     this.RPG_MODE = "RPG_MODE_";                    // Indicator if RPG Mode is active

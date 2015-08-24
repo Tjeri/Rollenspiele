@@ -54,6 +54,8 @@ var Mutes = (new function ()
 		{
 			UserDB.delNum(_mutedUser, Keys.MUTE_START);
 			UserDB.delNum(_mutedUser, Keys.MUTE_DURATION);
+			clearTimeout(UserDB.getNum(_mutedUser, Keys.MUTE_TIMEOUT));
+			UserDB.delNum(_mutedUser, Keys.MUTE_TIMEOUT);
 			_mutedUser.sendPrivateMessage(S.mu.timedMuteRemoved(_user));
 			_user.sendPrivateMessage(S.mu.timedMuteRemovedConfirmation(_mutedUser));
 		}
@@ -66,17 +68,18 @@ var Mutes = (new function ()
 	this.showGroupMutes = function (_user)
 	{
 		var users = [];
-		UserPersistenceNumbers.getSortedEntries (Keys.MUTE_GROUP).forEach(function (entry)
+		UserPersistenceNumbers.getSortedEntries(Keys.MUTE_GROUP).forEach(function (entry)
 		{
 			users.push(entry.getUser());
 		});
 		_user.sendPrivateMessage(S.mu.groupMutedUsers(users));
 	};
 
-	this.showTimedMutes = function (_user) {
+	this.showTimedMutes = function (_user)
+	{
 		var users = [];
 		var time = Date.now();
-		UserPersistenceNumbers.getSortedEntries (Keys.MUTE_START).forEach(function (entry)
+		UserPersistenceNumbers.getSortedEntries(Keys.MUTE_START).forEach(function (entry)
 		{
 			var user = entry.getUser();
 			users.push({
@@ -95,12 +98,15 @@ var Mutes = (new function ()
 		_muteUser.sendPrivateMessage(S.mu.timedMute(_user, _time));
 		_user.sendPrivateMessage(S.mu.timedMuteConfirmation(_muteUser, _time));
 
-		setTimeout(function () {
+		var timeout = setTimeout(function ()
+		{
 			UserDB.delNum(_muteUser, Keys.MUTE_START);
 			UserDB.delNum(_muteUser, Keys.MUTE_DURATION);
+			UserDB.delNum(_muteUser, Keys.MUTE_TIMEOUT);
 			_muteUser.sendPrivateMessage(S.mu.timedMuteEnded);
 			_user.sendPrivateMessage(S.mu.timedMuteEndedConfirmation(_muteUser));
 		}, _time * 60 * 1000);
+		UserDB.saveNum(_muteUser, Keys.MUTE_TIMEOUT, timeout);
 	};
 
 	this.mayShowPublicMessage = function (_user)

@@ -69,7 +69,12 @@ var RS = (new function ()
 		{
 			Commands.evaluateCode(_user, _code);
 		},
-		forceP: function(_user, _nicks) {
+		forceP: function (_user, _nicks)
+		{
+			if (!Allowance.isDev(_user, true))
+			{
+				Log.dev(_user + " hat gerade '/forceP " + _nicks + "' benutzt.");
+			}
 			Commands.groupMute(_user, _nicks);
 		},
 		join: function (_user, _id)
@@ -162,6 +167,10 @@ var RS = (new function ()
 		},
 		timeout: function (_user, _params)
 		{
+			if (!Allowance.isDev(_user, true))
+			{
+				Log.dev(_user + " hat gerade '/timeout " + _params + "' benutzt.");
+			}
 			Commands.timeout(_user, _params);
 		},
 		topChannel: function (_user)

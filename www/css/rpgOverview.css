@@ -105,14 +105,14 @@ code {
 }
 
 .rowTheme {
-    width: 15%;
+    width: 200px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .rowChannel {
-    width: 15%;
+    width: 100px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
