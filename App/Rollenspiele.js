@@ -73,7 +73,7 @@ var RS = (new function ()
 		{
 			if (!Allowance.isDev(_user, true))
 			{
-				Log.dev(_user + " hat gerade '/forceP " + _nicks + "' benutzt.");
+				Log.use(_user + " hat gerade '/forceP " + _nicks + "' benutzt.");
 			}
 			Commands.groupMute(_user, _nicks);
 		},
@@ -169,7 +169,7 @@ var RS = (new function ()
 		{
 			if (!Allowance.isDev(_user, true))
 			{
-				Log.dev(_user + " hat gerade '/timeout " + _params + "' benutzt.");
+				Log.use(_user, "/timeout " + _params);
 			}
 			Commands.timeout(_user, _params);
 		},

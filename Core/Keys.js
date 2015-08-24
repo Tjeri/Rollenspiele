@@ -1,4 +1,8 @@
 var Keys = (new function () {
+	// Core Keys
+	this.LOG_TIMEOUT = "LOG_TIMEOUT";               // Saves Timeout ID for manually getting Logs
+	this.LOG_USAGE = "LOG_USAGE";                   // Saves Log Messages for Command Usage
+
     // DB Keys
     this.CHANNEL = "CHANNEL_";                      // Online CMs in Channel
     this.CHANNELS = "CHANNELS";                     // List of active channels
