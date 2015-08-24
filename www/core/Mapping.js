@@ -1,5 +1,6 @@
 var rpgMapping =
 {
+	lp: { name: 'lastPlayed', forList: false },
 	id: { name: 'id', forList: true },
 	c: { name: 'channel', forList: true },
 	r: { name: 'running', forList: true },
