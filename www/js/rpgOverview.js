@@ -466,6 +466,7 @@ $(function ()
 	{
 		$('#containerRPGOverview').show();
 		$('#containerRPGDetails').hide();
+		$('#containerRPGOverviewContent').css('padding-top', $('#headerOverview').height());
 
 		currentRPG = null;
 
@@ -567,6 +568,7 @@ $(function ()
 	{
 		$('#containerRPGOverview').hide();
 		$('#containerRPGDetails').show();
+		$('#containerMainContentRPGDetails').css('padding-top', $('#headerDetails').height());
 
 		$(currentDetailsTab).removeClass('active');
 		currentDetailsTab = '#selectorDetails';
