@@ -86,6 +86,11 @@ S.mu = {
 		});
 		return "Folgende User haben momentan Time-Out:°#°" + users + "°#°Ein Klick auf den Nick hebt den Time-Out auf.";
 	},
+	timedMuteEnded: "Die Zeit ist abgelaufen. Dein Time-Out wurde aufgehoben.",
+	timedMuteEndedConfirmation: function (_user)
+	{
+		return "Die Zeit ist abgelaufen. Der Time-Out von " + _user.getProfileLink() + " wurde aufgehoben."
+	},
 	timedMuteRemoved: function (_cm)
 	{
 		return "Dein Time-Out wurde von " + _cm.getProfileLink() + " aufgehoben.";

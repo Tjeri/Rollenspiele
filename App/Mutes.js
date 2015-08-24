@@ -94,6 +94,13 @@ var Mutes = (new function ()
 
 		_muteUser.sendPrivateMessage(S.mu.timedMute(_user, _time));
 		_user.sendPrivateMessage(S.mu.timedMuteConfirmation(_muteUser, _time));
+
+		setTimeout(function () {
+			UserDB.delNum(_muteUser, Keys.MUTE_START);
+			UserDB.delNum(_muteUser, Keys.MUTE_DURATION);
+			_muteUser.sendPrivateMessage(S.mu.timedMuteEnded);
+			_user.sendPrivateMessage(S.mu.timedMuteEndedConfirmation(_muteUser));
+		}, _time * 60 * 1000);
 	};
 
 	this.mayShowPublicMessage = function (_user)
