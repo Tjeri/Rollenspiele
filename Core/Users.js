@@ -8,15 +8,16 @@ var Users = (new function () {
     };
 
     this.getByNick = function (_user, _nick) {
-        if (_access.exists(_nick)) {
-            var uid = _access.getUserId(_nick);
+        var nick = _nick.trim();
+        if (_access.exists(nick)) {
+            var uid = _access.getUserId(nick);
             if (_access.mayAccess(uid)) {
                 return _access.getUserById(uid);
             } else {
                 _user.sendPrivateMessage("Ich kann auf '" + _access.getNick(uid) + "' nicht zugreifen. Der User muss den Channel schon einmal betreten haben.");
             }
         } else {
-            _user.sendPrivateMessage("Ein User mit dem Nick '" + _nick + "' existiert nicht.");
+            _user.sendPrivateMessage("Ein User mit dem Nick '" + nick + "' existiert nicht.");
         }
     };
 }());
