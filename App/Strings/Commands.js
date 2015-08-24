@@ -4,6 +4,7 @@ S.com = {
     },
     conf_changed: "Done.",
     conf_wrongParam: "Parameter existiert nicht.",
+    groupMute_minUsers: "Du musst mindestens 2 Nutzer angeben, die sich streiten. Das kann nicht einer allein tun.",
     help: "°>[Befehle]|https://github.com/Tjeri/Rollenspiele/wiki/Befehle<° | " +
     "°>[Bug Meldungen]|https://github.com/Tjeri/Rollenspiele/wiki/Bugs<° | " +
     "°>[ChangeLog]|https://github.com/Tjeri/Rollenspiele/wiki/Changelog<° | " +

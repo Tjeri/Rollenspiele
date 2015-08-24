@@ -9,14 +9,14 @@ var Users = (new function () {
 
     this.getByNick = function (_user, _nick) {
         if (_access.exists(_nick)) {
-            var id = _access.getUserId(_nick);
-            if (_access.mayAccess(id)) {
-                return _access.getUserById(id);
+            var uid = _access.getUserId(_nick);
+            if (_access.mayAccess(uid)) {
+                return _access.getUserById(uid);
             } else {
-                _user.sendPrivateMessage("Ich kann auf " + _nick + " nicht zugreifen. Der User muss den Channel schon einmal betreten haben.");
+                _user.sendPrivateMessage("Ich kann auf '" + _access.getNick(uid) + "' nicht zugreifen. Der User muss den Channel schon einmal betreten haben.");
             }
         } else {
-            _user.sendPrivateMessage("Ein User mit dem Nick '" + _nick + "'existiert nicht.");
+            _user.sendPrivateMessage("Ein User mit dem Nick '" + _nick + "' existiert nicht.");
         }
     };
 }());

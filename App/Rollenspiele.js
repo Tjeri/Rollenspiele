@@ -69,6 +69,9 @@ var RS = (new function ()
 		{
 			Commands.evaluateCode(_user, _code);
 		},
+		forceP: function(_user, _nicks) {
+			Commands.groupMute(_user, _nicks);
+		},
 		join: function (_user, _id)
 		{
 			Commands.joinRPG(_user, _id);

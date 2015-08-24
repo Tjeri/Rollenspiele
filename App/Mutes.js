@@ -3,20 +3,88 @@ var Mutes = (new function ()
 
 	this.groupMute = function (_user, _users)
 	{
-
+		var users = "";
+		_users.forEach(function (user)
+		{
+			if (users)
+			{
+				users += ", ";
+			}
+			users += user.getProfileLink();
+			var nicks = "";
+			_users.forEach(function (user2)
+			{
+				if (!user.equals(user2))
+				{
+					if (nicks)
+					{
+						nicks += ",";
+					}
+					nicks += user2.getNick();
+				}
+			});
+			user.sendPrivateMessage(S.mu.groupMute(_user, nicks));
+			UserDB.saveNum(user, Keys.MUTE_GROUP, 1);
+			UserDB.saveStr(user, Keys.MUTE_GROUP, S.mu.groupMuteDB(_user, nicks))
+		});
+		_user.sendPrivateMessage(S.mu.groupMuted(users));
 	};
 
 	this.removeGroupMute = function (_user, _users)
 	{
-
+		_users.forEach(function (user)
+		{
+			if (UserDB.hasNum(user, Keys.MUTE_GROUP))
+			{
+				UserDB.delNum(user, Keys.MUTE_GROUP);
+				UserDB.delStr(user, Keys.MUTE_GROUP);
+				user.sendPrivateMessage(S.mu.groupMuteRemoved(_user));
+				_user.sendPrivateMessage(S.mu.groupMuteRemovedConfirmation(user));
+			}
+			else
+			{
+				_user.sendPrivateMessage(S.mu.noMute(user));
+			}
+		});
 	};
 
 	this.removeTimedMute = function (_user, _mutedUser)
 	{
-		UserDB.delNum(_mutedUser, Keys.MUTE_START);
-		UserDB.delNum(_mutedUser, Keys.MUTE_DURATION);
-		_mutedUser.sendPrivateMessage(S.mu.timedMuteRemoved(_user));
-		_user.sendPrivateMessage(S.mu.timedMuteRemovedConfirmation(_mutedUser));
+		if (UserDB.hasNum(_mutedUser, Keys.MUTE_START))
+		{
+			UserDB.delNum(_mutedUser, Keys.MUTE_START);
+			UserDB.delNum(_mutedUser, Keys.MUTE_DURATION);
+			_mutedUser.sendPrivateMessage(S.mu.timedMuteRemoved(_user));
+			_user.sendPrivateMessage(S.mu.timedMuteRemovedConfirmation(_mutedUser));
+		}
+		else
+		{
+			_user.sendPrivateMessage(S.mu.noTimeout(_mutedUser));
+		}
+	};
+
+	this.showGroupMutes = function (_user)
+	{
+		var users = [];
+		UserPersistenceNumbers.getSortedEntries (Keys.MUTE_GROUP).forEach(function (entry)
+		{
+			users.push(entry.getUser());
+		});
+		_user.sendPrivateMessage(S.mu.groupMutedUsers(users));
+	};
+
+	this.showTimedMutes = function (_user) {
+		var users = [];
+		var time = Date.now();
+		UserPersistenceNumbers.getSortedEntries (Keys.MUTE_START).forEach(function (entry)
+		{
+			var user = entry.getUser();
+			users.push({
+				user: user,
+				time: (UserDB.getNum(user, Keys.MUTE_DURATION, 0) * 60 * 1000) - (time - entry.getValue())
+			});
+		});
+		_user.sendPrivateMessage(S.mu.timeMutedUsers(users));
 	};
 
 	this.timedMute = function (_user, _muteUser, _time)

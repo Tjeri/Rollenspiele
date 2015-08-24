@@ -716,6 +716,58 @@ var Commands = (new function ()
 		}
 	};
 
+	this.groupMute = function (_user, _nicks)
+	{
+		if (Allowance.isAllowed(_user))
+		{
+			if (Config.moduleGroupMutes())
+			{
+				if (_nicks)
+				{
+					var remove = _nicks.startsWith("!");
+					if (remove)
+					{
+						_nicks = _nicks.substr(1);
+					}
+					var nicks = _nicks.split(",");
+					var users = [];
+					nicks.forEach(function (nick)
+					{
+						var user = Users.getByNick(_user, nick.trim());
+						if (user)
+						{
+							users.push(user);
+						}
+					});
+
+					if (!remove)
+					{
+						if (users.length > 1)
+						{
+							Mutes.groupMute(_user, users);
+						}
+						else
+						{
+							_user.sendPrivateMessage(S.com.groupMute_minUsers);
+						}
+					}
+					else if (users.length > 0)
+					{
+						Mutes.removeGroupMute(_user, users);
+					}
+				}
+				else
+				{
+					Mutes.showGroupMutes(_user);
+				}
+			}
+			else
+			{
+				_user.sendPrivateMessage(S.com.notAvailable);
+			}
+		}
+	};
+
 	this.removeHtmlBox = function (_user, _nick)
 	{
 		if (Allowance.isDev(_user))
@@ -788,34 +840,44 @@ var Commands = (new function ()
 		{
 			if (Config.moduleTimeouts())
 			{
-				var params = _params.split(":");
-				var nick = params[0];
-				var remove = nick.startsWith("!");
-				if (remove)
+				if (_params)
 				{
-					nick = nick.substr(1);
-				}
-				var user = Users.getByNick(_user, nick);
-				if (user)
-				{
+					var params = _params.split(":");
+					var nick = params[0];
+					var remove = nick.startsWith("!");
 					if (remove)
 					{
-						Mutes.removeTimedMute(_user, user);
+						nick = nick.substr(1);
 					}
-					else
+					var user = Users.getByNick(_user, nick);
+					if (user)
 					{
-						var time = params[1];
-						if (!time)
+						if (remove)
 						{
-							time = Config.standardTimeout();
-						} else {
-							time = parseInt(time);
-							if (isNaN(time)) {
+							Mutes.removeTimedMute(_user, user);
+						}
+						else
+						{
+							var time = params[1];
+							if (!time)
+							{
 								time = Config.standardTimeout();
 							}
+							else
+							{
+								time = parseInt(time);
+								if (isNaN(time))
+								{
+									time = Config.standardTimeout();
+								}
+							}
+							Mutes.timedMute(_user, user, time);
 						}
-						Mutes.timedMute(_user, user, time);
 					}
+				}
+				else
+				{
+					Mutes.showTimedMutes(_user);
 				}
 			}
 			else
