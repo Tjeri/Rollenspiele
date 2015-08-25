@@ -63,11 +63,11 @@
 	this.use = function (_user, _command)
 	{
 		var messages = DB.getObj(Keys.LOG_USAGE, []);
-		messages.push(new Date().toString() + ": " + _user.getProfileLink() + " hat '" + _command + "' benutzt.");
+		messages.push(JSON.stringify(new Date().toString() + ": " + _user.getProfileLink() + " hat '" + _command + "' benutzt."));
 		DB.saveObj(Keys.LOG_USAGE, messages);
 	};
 
-	this.get = function ()
+	this.get = function (_force)
 	{
 		var messages = DB.getObj(Keys.LOG_USAGE, []);
 		var message = "";
@@ -79,6 +79,9 @@
 			}
 			message += msg;
 		});
+		if (_force && !message) {
+			message = "Keine Vorkommnisse.";
+		}
 		if (message)
 		{
 			Instance.getDev().sendPostMessage("Usage Log", message);
