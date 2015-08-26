@@ -816,7 +816,8 @@ var Commands = (new function ()
 				var user = Users.getByNick(_user, _nick);
 				if (user)
 				{
-					RS.sendPub(S.com.juschu(user));
+					user.sendPrivateMessage(S.com.juschu(user));
+					_user.sendPrivateMessage(S.com.juschuConfirmation(user));
 				}
 			}
 			else

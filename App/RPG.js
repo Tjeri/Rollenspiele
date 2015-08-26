@@ -1,4 +1,4 @@
-function RPG(_host, _id)
+function RPG(_creator, _host, _id)
 {
 	this.start = Date.now();
 	this.time = 0;
@@ -8,6 +8,7 @@ function RPG(_host, _id)
 	this.channel = Channel.getName();
 	this.running = true;
 
+	this.creator = _creator;
 	this.host = _host;
 	this.hostUid = _host.getUserId();
 	this.players = [_host.getUserId()];
@@ -55,7 +56,7 @@ RPG.eventChangeHost = function (_user, _id, _uid)
 };
 RPG.eventCreateRPG = function (_user, _id, _host)
 {
-	var rpg = new RPG(_host, _id);
+	var rpg = new RPG(_user, _host, _id);
 	RPGS.addRPG(rpg);
 	RPG.save(rpg);
 	Players.rpgStart(_host, _id);
@@ -285,7 +286,7 @@ RPG.changeHost = function (_rpg, _user, _newHost)
 
 RPG.create = function (_user, _host, _id)
 {
-	var rpg = new RPG(_host, _id);
+	var rpg = new RPG(_user, _host, _id);
 	Players.rpgStart(_host, _id);
 	RPGS.addRPG(rpg);
 	RPG.save(rpg);

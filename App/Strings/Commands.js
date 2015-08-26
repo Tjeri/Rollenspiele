@@ -15,6 +15,9 @@ S.com = {
             "Zum Ausleben deiner sexuellen Fantasien ist dies der falsche Ort. " +
             "Die diesbezügliche Kontaktaufnahme zu Jugendlichen wird nicht geduldet und kann zur Sperrung des Nicknamen führen.";
     },
+	juschuConfirmation: function (_user) {
+		return "Ich werde " + _user.getProfileLink() + " darauf hinweisen.";
+	},
     notAllowed: "Leider steht dir diese Funktion nicht zur Verfügung.",
     notAvailable: "Diese Funktion ist momentan nicht verfügbar.",
     usage: function (_cmd) {
