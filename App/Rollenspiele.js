@@ -173,11 +173,11 @@ var RS = (new function ()
 			}
 			Commands.timeout(_user, _params);
 		},
-		topChannel: function (_user)
+		topChannels: function (_user)
 		{
 			Commands.topChannel(_user);
 		},
-		topPlayer: function (_user)
+		topPlayers: function (_user)
 		{
 			Commands.topPlayer(_user);
 		},

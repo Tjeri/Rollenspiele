@@ -57,10 +57,10 @@ var HtmlHandler = (new function ()
 	this.sendRPGHint = function (_user)
 	{
 		var hint = RPGMode.rpgModeActive() ? rpgHint : rpgList;
-		if (_user.canSendAppContent(hint))
-		{
+		//if (_user.canSendAppContent(hint))
+		//{
 			_user.sendAppContent(hint);
-		}
+		//}
 	};
 
 }());

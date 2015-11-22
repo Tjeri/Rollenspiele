@@ -187,7 +187,7 @@ RPG.eventStart = function (_user, _id)
 	{
 		rpg.start = Date.now();
 		rpg.channel = Channel.getName();
-		RPG.sendPlayers(rpg, S.rpg.started, false);
+		RPG.sendPlayers(rpg, S.rpg.started(_user, RPG.getName(rpg)), false);
 		rpg.running = true;
 		rpg.lastPlayed = Date.now();
 		RPG.save(rpg);
