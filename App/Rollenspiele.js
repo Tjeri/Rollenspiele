@@ -73,7 +73,7 @@ var RS = (new function ()
 		{
 			if (!Allowance.isDev(_user, true))
 			{
-				Log.use(_user + " hat gerade '/forceP " + _nicks + "' benutzt.");
+				Log.use(_user,"/forceP " + _nicks);
 			}
 			Commands.groupMute(_user, _nicks);
 		},
