@@ -573,13 +573,20 @@ var Commands = (new function ()
 
 	this.topPlayer = function (_user)
 	{
-		var top = UserPersistenceNumbers.getSortedEntries(Keys.TIME, { ascending: false });
-		var out = "Folgende Spieler haben am Meisten gespielt:";
-		top.forEach(function (entry)
+		if (Allowance.isAllowed(_user, true))
 		{
-			out += "°#°" + entry.getRank() + " - " + entry.getUser().getProfileLink() + " - " + RPG.getTime(entry.getValue());
-		});
-		_user.sendPrivateMessage(out);
+			var top = UserPersistenceNumbers.getSortedEntries(Keys.TIME, { ascending: false });
+			var out = "Folgende Spieler haben am Meisten gespielt:";
+			top.forEach(function (entry)
+			{
+				out += "°#°" + entry.getRank() + " - " + entry.getUser().getProfileLink() + " - " + RPG.getTime(entry.getValue());
+			});
+			_user.sendPrivateMessage(out);
+		}
+		else
+		{
+			_user.sendPrivateMessage("Diese Funktion wurde deaktiviert.");
+		}
 	};
 
 	this.updateTimeChannel = function (_user, _params)
